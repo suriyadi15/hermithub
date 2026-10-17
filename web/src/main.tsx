@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useIsMobile, useVisualViewport } from "@/hooks/use-mobile";
 import { api, ApiError, unwrap } from "@/lib/api";
+import { useUpdateStatus } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import Dashboard from "@/routes/Dashboard";
 import Login from "@/routes/Login";
@@ -30,7 +31,8 @@ const queryClient = new QueryClient({
 function Shell() {
   const location = useLocation();
   const inProject = location.pathname.startsWith("/p/");
-  const nav = (to: string, label: string, Icon: typeof LayoutDashboard) => (
+  const update = useUpdateStatus();
+  const nav = (to: string, label: string, Icon: typeof LayoutDashboard, dot = false) => (
     <NavLink
       to={to}
       end
@@ -41,7 +43,10 @@ function Shell() {
         )
       }
     >
-      <Icon className="size-4" />
+      <span className="relative">
+        <Icon className="size-4" />
+        {dot && <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary" />}
+      </span>
       <span className="hidden sm:inline">{label}</span>
     </NavLink>
   );
@@ -53,7 +58,7 @@ function Shell() {
           <img src="/favicon.svg" alt="" className="size-7" />
           <span className="mr-2 font-semibold sm:mr-4">Project Hub</span>
           {nav("/", "Dashboard", LayoutDashboard)}
-          {nav("/settings", "Settings", SettingsIcon)}
+          {nav("/settings", "Settings", SettingsIcon, update.data?.available)}
           <Button
             variant="ghost"
             size="sm"

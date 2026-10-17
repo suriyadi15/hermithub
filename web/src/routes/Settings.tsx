@@ -6,6 +6,7 @@ import { ConfirmDialog } from "@/components/dialogs";
 import { AgentsSection } from "@/components/settings/AgentsSection";
 import { GitHubSection, GitIdentitySection, SshKeySection } from "@/components/settings/GitSections";
 import { TwoFactorSection } from "@/components/settings/TwoFactorSection";
+import { UpdatesSection } from "@/components/settings/UpdatesSection";
 import { TaskSheet } from "@/components/TaskSheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,6 +148,10 @@ export default function Settings() {
         </ul>
       </Section>
 
+      <Section title="Updates" description="New releases of Project Hub.">
+        <UpdatesSection />
+      </Section>
+
       <Section title="About">
         <dl className="grid grid-cols-[8rem_1fr] gap-y-1 text-sm">
           <dt className="text-muted-foreground">Version</dt>
@@ -154,10 +159,6 @@ export default function Settings() {
           <dt className="text-muted-foreground">Projects folder</dt>
           <dd className="truncate font-mono">{settings.data?.projectsDir}</dd>
         </dl>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Update: run <code className="font-mono">docker compose pull && docker compose up -d</code> in the install folder. Running
-          sessions are stopped; conversations can be continued afterwards.
-        </p>
       </Section>
 
       <ConfirmDialog

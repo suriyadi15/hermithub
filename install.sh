@@ -272,6 +272,8 @@ After=network-online.target
 
 [Service]
 ExecStart=$RUNNER
+# Tells Project Hub that systemd restarts it, so it can restart itself after an update.
+Environment=HUB_SERVICE=systemd
 Restart=on-failure
 RestartSec=3
 # Only stop the server itself: agent sessions run in a tmux server that should outlive restarts and updates.
@@ -306,6 +308,7 @@ native_service_macos() {
 <dict>
   <key>Label</key><string>$PLIST_LABEL</string>
   <key>ProgramArguments</key><array><string>$RUNNER</string></array>
+  <key>EnvironmentVariables</key><dict><key>HUB_SERVICE</key><string>launchd</string></dict>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <!-- Agent sessions run in a tmux server that should outlive restarts and updates. -->
@@ -421,7 +424,8 @@ EOF
   fi
   cat <<EOF
   project-hub set-password                  # forgot the password
-  re-run this installer                     # update
+  project-hub update                        # update now (or from Settings → Updates)
+  project-hub auto-update on                # install new releases automatically
 EOF
 }
 

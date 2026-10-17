@@ -17,6 +17,9 @@ Settings live in `~/.config/project-hub/env` (written by the installer). Restart
 | `TRUST_PROXY` | – | Client IP header behind a proxy, as below |
 | `HUB_PASSWORD` | – | Seeds the password on first start instead of the setup page |
 | `HUB_TMUX_SOCKET` | `hub` | Name of the private tmux server (`tmux -L hub ls` lists the sessions) |
+| `HUB_AUTO_UPDATE` | – | `1` / `0` turns automatic updates on / off, overriding the switch in Settings and `project-hub auto-update` |
+| `HUB_UPDATE_CHECK` | `1` | `0` stops the release check every 6 hours (and with it automatic updates) |
+| `HUB_REPO` | `suriyadi15/project-hub` | GitHub repository releases and updates come from (for forks) |
 
 The service starts through `~/.config/project-hub/run.sh`, which the installer regenerates. It puts `~/.local/bin`
 and the usual system folders on `PATH`, and sets `NPM_CONFIG_PREFIX=~/.local` so agents installed from the dashboard

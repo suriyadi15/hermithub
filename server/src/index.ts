@@ -17,13 +17,12 @@ import { taskRoutes } from "./tasks";
 import { terminalRoutes } from "./terminal";
 import { worktreeRoutes } from "./worktrees";
 import { applyGlobalOptions } from "./tmux";
+import { startUpdateScheduler, updateRoutes, VERSION } from "./update";
 import { embeddedWebFile } from "./web-embed";
-import pkg from "../../package.json";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const HOST = process.env.HOST ?? "127.0.0.1";
 const WEB_DIST = resolve(process.env.WEB_DIST ?? join(import.meta.dir, "../../web/dist"));
-export const VERSION: string = process.env.HUB_VERSION || pkg.version || "dev";
 const PUBLIC_API = new Set(["/api/health", "/api/auth/login", "/api/auth/me", "/api/auth/logout", "/api/auth/setup"]);
 
 /** No framing (clickjacking), no MIME sniffing of served files, no setup token leaking via Referer. */
@@ -65,6 +64,7 @@ const api = new Elysia()
   .use(agentRoutes)
   .use(taskRoutes)
   .use(integrationRoutes)
+  .use(updateRoutes)
   .get("/api/stats", () => serverStats())
   .get("/api/activity", () => recentActivity(30))
   .get("/api/settings", () => ({ projectsDir: PROJECTS_DIR, version: VERSION }));
@@ -97,6 +97,7 @@ export async function start() {
   await ensurePassword();
   const token = initSetupToken();
   await applyGlobalOptions(); // no-op when no tmux server is running yet
+  startUpdateScheduler();
   app.listen({ port: PORT, hostname: HOST, idleTimeout: 120 });
   console.log(`Project Hub on http://${HOST}:${PORT} — projects: ${PROJECTS_DIR}`);
   if (token) {

@@ -70,7 +70,7 @@ await writeFile(
 for (const name of names) {
   const outfile = join(DIST, `project-hub-${name}`);
   console.log(`Building ${relative(ROOT, outfile)} (${TARGETS[name]})`);
-  await $`bun build ${entry} --compile --minify --no-compile-autoload-dotenv --no-compile-autoload-bunfig --target=${TARGETS[name]} --outfile ${outfile}`.cwd(ROOT);
+  await $`bun build ${entry} --compile --minify --define ${`process.env.HUB_TARGET="${name}"`} --no-compile-autoload-dotenv --no-compile-autoload-bunfig --target=${TARGETS[name]} --outfile ${outfile}`.cwd(ROOT);
 }
 await rm(ENTRY_DIR, { recursive: true, force: true });
 

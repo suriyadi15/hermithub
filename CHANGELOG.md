@@ -8,7 +8,12 @@
   systemd user service or launchd agent. Agent sessions survive restarts and updates. `--docker` keeps the
   container install, and existing Docker installs keep updating as Docker. New options: `--prefix`, `--no-service`,
   `--uninstall`, `--purge`. See [docs/installation.md](docs/installation.md).
-- `project-hub` commands: `serve`, `set-password`, `disable-2fa`, `doctor`, `version`.
+- `project-hub` commands: `serve`, `set-password`, `disable-2fa`, `doctor`, `update`, `auto-update`, `version`.
+- **Updates from the dashboard or the terminal.** Project Hub checks for a new release every 6 hours and shows it in
+  **Settings → Updates**. The standalone executable updates itself from there or with `project-hub update`: it
+  verifies the checksum, swaps the file and restarts the service while agent sessions keep running. Automatic
+  updates can be turned on or off in Settings, with `project-hub auto-update on|off` or `HUB_AUTO_UPDATE`.
+  Docker installs show the new version and the `docker compose` command.
 - Server stats work on macOS.
 
 - **Stop session** on a session in a worktree can remove the worktree too (and its branch once merged), so a

@@ -27,6 +27,10 @@ GitHub token and SSH key. Treat the password like an SSH key.
   other folders, `~/.ssh`, cloud CLIs and their credentials. The installer refuses to run as root. For a shared or
   internet-facing server, prefer Docker or a dedicated user account (e.g. `adduser hub`) for the hub.
 
+- **Updates** come only from the GitHub releases of the repository (`HUB_REPO`) over HTTPS. The executable is
+  installed only when it matches the release's `SHA256SUMS` and starts. Installing an update needs a logged-in
+  session, like everything else. Automatic updates are off unless you turn them on.
+
 ## Recommendations
 
 - Serve it over HTTPS only, and add a second factor in front: Cloudflare Access, a VPN (Tailscale, WireGuard)

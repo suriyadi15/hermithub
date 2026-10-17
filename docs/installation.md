@@ -100,9 +100,35 @@ project-hub disable-2fa     # lost the authenticator and the recovery codes
 `set-password` and `disable-2fa` use `~/.project-hub`. If you changed `DATA_DIR` in the env file, pass it along:
 `DATA_DIR=/path/to/data project-hub set-password`.
 
-### Update and uninstall
+### Update
 
-Re-run the installer to update. It replaces the executable and restarts the service, and keeps your settings and data.
+Project Hub checks GitHub for a new release every 6 hours. When one is out, a dot appears on **Settings**, and
+**Settings → Updates** shows it with a button to install it. From a terminal:
+
+```bash
+project-hub update --check        # is there a new release?
+project-hub update                # install it and restart the service
+project-hub update --version v0.5.0 -y   # a specific release, without asking
+```
+
+The update downloads the executable for your system from the release, checks it against `SHA256SUMS` and that it
+starts, replaces `~/.local/bin/project-hub` and restarts the service. Settings and data are kept, and running agent
+sessions keep going (they live in their own tmux server).
+
+**Automatic updates** are off by default. Turn them on or off in **Settings → Updates**, or:
+
+```bash
+project-hub auto-update on        # install new releases on their own (checked every 6 hours)
+project-hub auto-update off
+project-hub auto-update status
+```
+
+`HUB_AUTO_UPDATE=1` or `0` in `~/.config/project-hub/env` overrides that switch, and `HUB_UPDATE_CHECK=0` stops
+the checks altogether. Automatic installs only happen when Project Hub runs as a service, so it can be restarted.
+
+Re-running the installer also updates (and repairs the service files).
+
+### Uninstall
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --uninstall

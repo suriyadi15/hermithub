@@ -12,10 +12,12 @@ Usage: project-hub [command]
   set-password    Set a new login password (signs out every session)
   disable-2fa     Turn off two-factor authentication
   doctor          Check the tools Project Hub needs
+  update          Install the latest release (--check: only check, --version vX.Y.Z, -y: no prompt)
+  auto-update     Install new releases automatically: on, off or status
   version         Print the version
 
 Settings come from the environment: PORT (8787), HOST (127.0.0.1), DATA_DIR (~/.project-hub),
-PROJECTS_DIR (~/projects), PUBLIC_ORIGIN, TRUST_PROXY. See docs/configuration.md.`;
+PROJECTS_DIR (~/projects), PUBLIC_ORIGIN, TRUST_PROXY, HUB_AUTO_UPDATE. See docs/configuration.md.`;
 
 async function doctor() {
   const { DATA_DIR, PROJECTS_DIR } = await import("./paths");
@@ -47,6 +49,12 @@ switch (command) {
     break;
   case "disable-2fa":
     (await import("./admin")).disable2faCommand();
+    break;
+  case "update":
+    await (await import("./admin")).updateCommand(args);
+    break;
+  case "auto-update":
+    (await import("./admin")).autoUpdateCommand(args[0]);
     break;
   case "doctor":
     await doctor();

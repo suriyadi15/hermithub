@@ -86,7 +86,11 @@ docker compose logs project-hub   # shows the setup link
 
 ## Updating
 
-Re-run the installer. It updates whichever install it finds. For Docker you can also run this in the install folder:
+Project Hub checks for new releases and shows them in **Settings → Updates**. The standalone executable updates
+itself from there with one click, or with `project-hub update` in a terminal. Automatic updates can be switched on
+or off in Settings or with `project-hub auto-update on|off`. See [docs/installation.md](docs/installation.md#update).
+
+Re-running the installer also updates whichever install it finds. For Docker, run this in the install folder:
 
 ```bash
 docker compose pull && docker compose up -d

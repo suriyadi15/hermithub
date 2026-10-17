@@ -20,6 +20,11 @@ export function useSettings() {
   return useQuery({ queryKey: ["settings"], queryFn: () => unwrap(api.settings.get()), staleTime: 60_000 });
 }
 
+/** Release check; the server itself only asks GitHub every few hours. */
+export function useUpdateStatus() {
+  return useQuery({ queryKey: ["update"], queryFn: () => unwrap(api.update.get({ query: {} })), refetchInterval: 30 * 60_000 });
+}
+
 export function useAgents() {
   return useQuery({ queryKey: ["agents"], queryFn: fetchAgents, staleTime: 30_000 });
 }

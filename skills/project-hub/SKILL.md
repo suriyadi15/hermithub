@@ -128,6 +128,7 @@ systemctl --user status project-hub    # Linux; macOS: launchctl print gui/$(id 
 curl -fsS http://127.0.0.1:8787/api/health
 cat ~/.project-hub/setup-token         # exists until a password is set
 project-hub doctor                     # tmux/git/node/npm/gh found?
+project-hub update --check             # newer release? (`project-hub update` installs it)
 ```
 
 Docker:

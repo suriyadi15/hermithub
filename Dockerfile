@@ -79,6 +79,7 @@ ENV HOST=0.0.0.0 \
     PROJECTS_DIR=/home/hub/projects \
     WEB_DIST=/app/web/dist \
     HUB_VERSION=$VERSION \
+    HUB_DOCKER=1 \
     NODE_ENV=production
 EXPOSE 8787
 VOLUME ["/data", "/home/hub"]
