@@ -1,0 +1,48 @@
+/* Brand colours from the dashboard icon (web/public/favicon.svg) */
+:root {
+  --sl-color-accent-low: #3b2117;
+  --sl-color-accent: #d9703f;
+  --sl-color-accent-high: #f6c9b2;
+  --sl-color-black: #18181b;
+}
+:root[data-theme="light"] {
+  --sl-color-accent-low: #fbe1d4;
+  --sl-color-accent: #b4521f;
+  --sl-color-accent-high: #5c2a10;
+}
+
+.hero .tagline { max-width: 40rem; }
+
+.agents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+.agents li {
+  margin: 0;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 999px;
+  font-size: var(--sl-text-sm);
+}
+
+.diagram {
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 1rem;
+}
+
+.screenshot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.75rem;
+  box-shadow: 0 1.5rem 3rem -1.5rem rgb(0 0 0 / 0.5);
+}
+.screenshot.phone {
+  max-width: 20rem;
+  margin-inline: auto;
+}

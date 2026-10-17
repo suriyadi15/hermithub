@@ -1,0 +1,17 @@
+{
+  "name": "@hub/site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "bun scripts/sync-docs.ts",
+    "dev": "bun run sync && astro dev",
+    "build": "bun run sync && astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.42.6",
+    "astro": "^7.4.0",
+    "sharp": "^0.34.0",
+    "starlight-links-validator": "^0.27.0"
+  }
+}
