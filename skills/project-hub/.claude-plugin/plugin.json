@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "project-hub",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Install, update, configure and troubleshoot Project Hub, the self-hosted dashboard for AI coding agents",
   "author": {
     "name": "Suriyadi"
