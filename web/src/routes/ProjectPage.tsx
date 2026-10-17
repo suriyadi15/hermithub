@@ -1,9 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  Check,
+  ChevronDown,
   Code,
   ExternalLink,
   File,
+  FolderGit2,
   FolderTree,
   GitBranch,
   History,
@@ -25,11 +28,14 @@ import { QuickOpen } from "@/components/QuickOpen";
 import { SearchPanel } from "@/components/SearchPanel";
 import { ModeBadge, SessionActions, StatusDot } from "@/components/SessionCard";
 import { TerminalView } from "@/components/TerminalView";
+import { WorktreesPanel } from "@/components/WorktreesPanel";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
@@ -37,12 +43,14 @@ import { useIsMobile, useIsTouch } from "@/hooks/use-mobile";
 import { api, ApiError, unwrap, type SessionMode } from "@/lib/api";
 import { ago } from "@/lib/format";
 import { useModes } from "@/lib/modes";
-import { useProjects, useSessions, useStartSession } from "@/lib/queries";
+import { useProjects, useSessions, useStartSession, useWorktrees } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 const CodeEditor = lazy(() => import("@/components/CodeEditor"));
 
 type OpenFile = {
+  /** Workspace the file belongs to: the project or "project@worktree". */
+  ws: string;
   path: string;
   content: string;
   saved: string;
@@ -54,8 +62,10 @@ type OpenFile = {
 
 let revealSeq = 0;
 
-/** Active pane key: `s:<session>`, `f:<path>`, `f:` (editor, nothing open), `git`, or "" (no session yet). */
+/** Active pane key: `s:<session>`, `f:<ws>:<path>`, `f:` (editor, nothing open), `git`, or "" (no session yet). */
 type Active = string;
+
+const fileKey = (f: { ws: string; path: string }) => `f:${f.ws}:${f.path}`;
 type MobileTab = "terminal" | "files" | "search" | "editor" | "git";
 /** Panel shown over the work area on phones (and in the desktop sidebar): file tree or search. */
 type Side = "files" | "search";
@@ -83,8 +93,17 @@ export default function ProjectPage() {
   });
 
   const [active, setActive] = useState<Active>(() => (search.get("s") ? `s:${search.get("s")}` : ""));
-  const [files, setFiles] = useState<OpenFile[]>([]);
+  const [allFiles, setFiles] = useState<OpenFile[]>([]);
   const [newMode, setNewMode] = useState<SessionMode | null>(null);
+  /** Worktree whose folder the file tree, search, editor and Git panel show; null = the project folder. */
+  const [workspace, setWorkspace] = useState<string | null>(() => search.get("w"));
+  const ws = workspace ? `${project}@${workspace}` : project;
+  const worktrees = useWorktrees(project);
+  const [worktreesOpen, setWorktreesOpen] = useState(false);
+  /** Worktree preselected in the new-session dialog. */
+  const [newWorktree, setNewWorktree] = useState<string | null>(null);
+  // Tabs of files opened in other worktrees stay open but hidden until you switch back.
+  const files = useMemo(() => allFiles.filter((f) => f.ws === ws), [allFiles, ws]);
   const { modes, info: modeInfo } = useModes();
   // Phones: file tree / search cover the work area. Desktop: which one the sidebar shows.
   const [sideOpen, setSideOpen] = useState<Side | null>(null);
@@ -104,38 +123,50 @@ export default function ProjectPage() {
   // Keep the active pane valid; default to the first session.
   useEffect(() => {
     if (!sessions.data) return;
-    const exists =
-      (active.startsWith("s:") && list.some((s) => `s:${s.name}` === active)) ||
-      (active.startsWith("f:") && (active === "f:" || files.some((f) => `f:${f.path}` === active))) ||
-      active === "git";
-    if (!exists) setActive(list[0] ? `s:${list[0].name}` : files[0] ? `f:${files[0].path}` : "");
+    if (active.startsWith("f:")) {
+      // Switching workspace hides the other worktree's files: show one of this workspace's instead.
+      if (active !== "f:" && !files.some((f) => fileKey(f) === active)) setActive(files[0] ? fileKey(files[0]) : "f:");
+      return;
+    }
+    const exists = (active.startsWith("s:") && list.some((s) => `s:${s.name}` === active)) || active === "git";
+    if (!exists) setActive(list[0] ? `s:${list[0].name}` : files[0] ? fileKey(files[0]) : "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessions.data, files.length]);
+  }, [sessions.data, files.length, ws]);
+
+  // A worktree that was removed (here or elsewhere) falls back to the project folder.
+  useEffect(() => {
+    const d = worktrees.data;
+    if (workspace && d && (!d.repo || !d.worktrees.some((w) => w.name === workspace))) setWorkspace(null);
+  }, [worktrees.data, workspace]);
 
   useEffect(() => {
     const s = active.startsWith("s:") ? active.slice(2) : null;
-    if ((search.get("s") ?? null) !== s) setSearch(s ? { s } : {}, { replace: true });
+    if ((search.get("s") ?? null) !== s || (search.get("w") ?? null) !== workspace) {
+      setSearch({ ...(s ? { s } : {}), ...(workspace ? { w: workspace } : {}) }, { replace: true });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, workspace]);
 
   const openFile = useCallback(
     async (path: string, line?: number, cols?: [number, number]) => {
+      const fws = ws;
+      const same = (f: OpenFile) => f.ws === fws && f.path === path;
       setSideOpen(null);
-      setActive(`f:${path}`);
+      setActive(fileKey({ ws: fws, path }));
       const reveal = line ? { line, cols, seq: ++revealSeq } : undefined;
-      if (files.some((f) => f.path === path)) {
-        if (reveal) setFiles((fs) => fs.map((f) => (f.path === path ? { ...f, reveal } : f)));
+      if (allFiles.some(same)) {
+        if (reveal) setFiles((fs) => fs.map((f) => (same(f) ? { ...f, reveal } : f)));
         return;
       }
-      setFiles((fs) => [...fs, { path, content: "", saved: "", state: "loading", reveal }]);
+      setFiles((fs) => [...fs, { ws: fws, path, content: "", saved: "", state: "loading", reveal }]);
       try {
-        const r = (await unwrap(api.files.read.get({ query: { project, path } }))) as
+        const r = (await unwrap(api.files.read.get({ query: { project: fws, path } }))) as
           | { content: string; size: number; modified: number }
           | { binary: true; size: number }
           | { tooLarge: true; size: number };
         setFiles((fs) =>
           fs.map((f) =>
-            f.path !== path
+            !same(f)
               ? f
               : "content" in r
                 ? { ...f, content: r.content, saved: r.content, modified: r.modified, state: "ready" }
@@ -143,61 +174,87 @@ export default function ProjectPage() {
           ),
         );
       } catch (e) {
-        setFiles((fs) => fs.map((f) => (f.path === path ? { ...f, state: "error", error: (e as Error).message } : f)));
+        setFiles((fs) => fs.map((f) => (same(f) ? { ...f, state: "error", error: (e as Error).message } : f)));
       }
     },
-    [files, project],
+    [allFiles, ws],
   );
 
   const closeFile = (path: string) => {
     const f = files.find((x) => x.path === path);
     if (f && f.content !== f.saved && !confirm(`${path} has unsaved changes. Close anyway?`)) return;
     const rest = files.filter((x) => x.path !== path);
-    setFiles(rest);
-    if (active === `f:${path}`) setActive(rest[0] ? `f:${rest[0].path}` : "f:");
+    setFiles((fs) => fs.filter((x) => !(x.ws === ws && x.path === path)));
+    if (active === fileKey({ ws, path })) setActive(rest[0] ? fileKey(rest[0]) : "f:");
   };
 
-  const saveFile = async (path: string, force = false) => {
-    const f = files.find((x) => x.path === path);
+  /** Saves always go to the workspace the file was opened from. */
+  const saveFile = async (path: string, force = false, fws = ws) => {
+    const same = (x: OpenFile) => x.ws === fws && x.path === path;
+    const f = allFiles.find(same);
     if (!f || f.state !== "ready") return;
     try {
       const r = await unwrap(
-        api.files.write.put({ project, path, content: f.content, expectedModified: force ? undefined : f.modified }),
+        api.files.write.put({ project: fws, path, content: f.content, expectedModified: force ? undefined : f.modified }),
       );
-      setFiles((fs) => fs.map((x) => (x.path === path ? { ...x, saved: f.content, modified: r.modified } : x)));
+      setFiles((fs) => fs.map((x) => (same(x) ? { ...x, saved: f.content, modified: r.modified } : x)));
       toast.success(`Saved: ${path}`);
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
         toast.warning(e.message, {
           duration: 10_000,
-          action: { label: "Timpa", onClick: () => saveFile(path, true) },
+          action: { label: "Timpa", onClick: () => saveFile(path, true, fws) },
         });
       } else toast.error((e as Error).message);
     }
   };
 
   const reloadFile = (path: string) => {
-    setFiles((fs) => fs.filter((x) => x.path !== path));
+    setFiles((fs) => fs.filter((x) => !(x.ws === ws && x.path === path)));
     setTimeout(() => openFile(path));
   };
 
-  const activeFile = active.startsWith("f:") ? files.find((f) => `f:${f.path}` === active) : undefined;
+  const editFile = (f: OpenFile, content: string) =>
+    setFiles((fs) => fs.map((x) => (x.ws === f.ws && x.path === f.path ? { ...x, content } : x)));
+
+  const activeFile = active.startsWith("f:") ? files.find((f) => fileKey(f) === active) : undefined;
   const activeSession = active.startsWith("s:") ? list.find((s) => `s:${s.name}` === active) : undefined;
   const dirtyFiles = files.filter((f) => f.content !== f.saved).length;
 
-  // One entry per mode+label (newest first); --continue picks the latest conversation anyway.
+  // The file tree, search and Git panel follow the session you switch to.
+  useEffect(() => {
+    if (activeSession) setWorkspace(activeSession.worktree ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSession?.name]);
+
+  const wsInfo = workspace
+    ? worktrees.data?.worktrees.find((w) => w.name === workspace)
+    : worktrees.data?.repo
+      ? worktrees.data.main
+      : undefined;
+  const wsGit = workspace ? wsInfo?.git : info?.git;
+
+  /** Open the new-session dialog, preselecting a worktree (null = the project folder). */
+  const startSessionIn = (worktree: string | null, mode: SessionMode) => {
+    setNewWorktree(worktree);
+    setNewMode(mode);
+  };
+
+  // One entry per mode+label+worktree (newest first); --continue picks the latest conversation anyway.
+  // Conversations of removed worktrees cannot be continued.
   const resumable = useMemo(() => {
     const seen = new Set<string>();
+    const live = new Set(worktrees.data?.worktrees.map((w) => w.name));
     return (history.data ?? [])
-      .filter((h) => h.mode !== "bash")
+      .filter((h) => h.mode !== "bash" && (!h.worktree || live.has(h.worktree)))
       .filter((h) => {
-        const key = `${h.mode}:${h.label}`;
+        const key = `${h.mode}:${h.label}:${h.worktree ?? ""}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       })
       .slice(0, 5);
-  }, [history.data]);
+  }, [history.data, worktrees.data]);
 
   // ---- mobile navigation ----
   const mobileTab: MobileTab = sideOpen
@@ -213,7 +270,7 @@ export default function ProjectPage() {
     setSideOpen(null);
     if (tab === "git") return setActive("git");
     if (tab === "editor") {
-      if (!active.startsWith("f:")) setActive(files[0] ? `f:${files[0].path}` : "f:");
+      if (!active.startsWith("f:")) setActive(files[0] ? fileKey(files[0]) : "f:");
       return;
     }
     const s = list.find((x) => x.name === lastSession) ?? list[0];
@@ -268,14 +325,14 @@ export default function ProjectPage() {
 
   const tree = (
     <FileTree
-      project={project}
+      project={ws}
       selected={activeFile?.path}
       onOpen={openFile}
       onQuickOpen={() => setQuickOpen(true)}
       title={sideSwitch || undefined}
     />
   );
-  const searchPanel = <SearchPanel project={project} onOpen={openFile} />;
+  const searchPanel = <SearchPanel project={ws} onOpen={openFile} />;
 
   const tabClass = (on: boolean) =>
     cn(
@@ -290,13 +347,19 @@ export default function ProjectPage() {
         <StatusDot status={s.status} />
         <Icon className="size-3.5" />
         <span className="max-w-36 truncate">{s.label}</span>
+        {s.worktree && (
+          <span title={`Worktree ${s.worktree}`} className="inline-flex items-center gap-0.5 text-xs text-info">
+            <FolderGit2 className="size-3" />
+            {s.worktree !== s.label && <span className="max-w-24 truncate">{s.worktree}</span>}
+          </span>
+        )}
       </button>
     );
   });
 
   const fileTabs = files.map((f) => (
-    <div key={f.path} className={cn(tabClass(active === `f:${f.path}`), "group gap-1 pr-1")}>
-      <button className="flex h-full items-center gap-1.5" onClick={() => setActive(`f:${f.path}`)} title={f.path}>
+    <div key={fileKey(f)} className={cn(tabClass(active === fileKey(f)), "group gap-1 pr-1")}>
+      <button className="flex h-full items-center gap-1.5" onClick={() => setActive(fileKey(f))} title={f.path}>
         <File className="size-3.5" />
         <span className="max-w-36 truncate">{f.path.split("/").pop()}</span>
         {f.content !== f.saved && <span className="size-2 rounded-full bg-primary" />}
@@ -324,7 +387,7 @@ export default function ProjectPage() {
           const m = mi.mode;
           const Icon = mi.icon;
           return (
-            <DropdownMenuItem key={m} className="max-md:py-2.5" onClick={() => setNewMode(m)}>
+            <DropdownMenuItem key={m} className="max-md:py-2.5" onClick={() => startSessionIn(workspace, m)}>
               <Icon /> {mi.label}
             </DropdownMenuItem>
           );
@@ -340,6 +403,11 @@ export default function ProjectPage() {
   const sessionBar = activeSession && (
     <div className="flex shrink-0 items-center gap-x-3 gap-y-1 overflow-x-auto border-b px-3 py-1 text-xs whitespace-nowrap [scrollbar-width:none] md:flex-wrap md:py-1.5">
       <ModeBadge mode={activeSession.mode} />
+      {activeSession.worktree && (
+        <span className="inline-flex items-center gap-1 text-info">
+          <FolderGit2 className="size-3" /> {activeSession.worktree}
+        </span>
+      )}
       {activeSession.mode !== "bash" && <span className="text-muted-foreground">{activeSession.permission}</span>}
       <span className="text-muted-foreground max-md:hidden">
         {activeSession.cpu}% CPU · {activeSession.memMB} MB
@@ -404,9 +472,9 @@ export default function ProjectPage() {
           useMonaco ? (
             <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading editor…</div>}>
               <CodeEditor
-                path={`${project}/${activeFile.path}`}
+                path={`${activeFile.ws}/${activeFile.path}`}
                 value={activeFile.content}
-                onChange={(v) => setFiles((fs) => fs.map((f) => (f.path === activeFile.path ? { ...f, content: v } : f)))}
+                onChange={(v) => editFile(activeFile, v)}
                 onSave={() => saveFile(activeFile.path)}
                 reveal={activeFile.reveal}
                 findSeq={findSeq}
@@ -415,7 +483,7 @@ export default function ProjectPage() {
           ) : (
             <PlainEditor
               value={activeFile.content}
-              onChange={(v) => setFiles((fs) => fs.map((f) => (f.path === activeFile.path ? { ...f, content: v } : f)))}
+              onChange={(v) => editFile(activeFile, v)}
               onSave={() => saveFile(activeFile.path)}
               reveal={activeFile.reveal}
               findSeq={findSeq}
@@ -446,7 +514,7 @@ export default function ProjectPage() {
           return (
             <button
               key={m}
-              onClick={() => setNewMode(m)}
+              onClick={() => startSessionIn(workspace, m)}
               className="flex items-center gap-3 rounded-xl border bg-card p-3 text-left text-sm transition-colors hover:border-primary/50 sm:flex-col sm:items-center sm:gap-1.5 sm:p-4 sm:text-center"
             >
               <Icon className="size-6 shrink-0 text-primary" />
@@ -467,7 +535,10 @@ export default function ProjectPage() {
             {resumable.map((h) => (
               <li key={h.name} className="flex items-center gap-2 px-3 py-2 text-sm">
                 <ModeBadge mode={h.mode} />
-                <span className="min-w-0 flex-1 truncate">{h.label}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  {h.label}
+                  {h.worktree && <span className="text-xs text-info"> @ {h.worktree}</span>}
+                </span>
                 <span className="text-xs text-muted-foreground max-[380px]:hidden">{ago(h.ended_at)}</span>
                 <Button
                   size="sm"
@@ -476,7 +547,14 @@ export default function ProjectPage() {
                   disabled={start.isPending}
                   onClick={() =>
                     start.mutate(
-                      { project, mode: h.mode, permission: h.permission, label: h.label, resume: true },
+                      {
+                        project,
+                        mode: h.mode,
+                        permission: h.permission,
+                        label: h.label,
+                        resume: true,
+                        worktree: h.worktree ?? undefined,
+                      },
                       { onSuccess: (r) => setActive(`s:${r.name}`) },
                     )
                   }
@@ -513,7 +591,7 @@ export default function ProjectPage() {
       {active === "f:" && emptyEditor}
       {active === "git" && (
         <div className="absolute inset-0">
-          <GitPanel project={project} onOpenFile={openFile} />
+          <GitPanel key={ws} project={ws} onOpenFile={openFile} />
         </div>
       )}
       {!active && emptySessions}
@@ -529,12 +607,49 @@ export default function ProjectPage() {
       </Button>
       <div className="min-w-0 flex-1">
         <h1 className="truncate font-semibold leading-tight">{project}</h1>
-        {info?.git && (
-          <p className="truncate text-xs text-muted-foreground">
-            <GitBranch className="mr-1 inline size-3" />
-            {info.git.branch}
-            {info.git.dirty > 0 && <span className="text-warning"> · {info.git.dirty} changed</span>}
-          </p>
+        {worktrees.data?.repo ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="flex max-w-full items-center gap-1 truncate rounded text-xs text-muted-foreground hover:text-foreground max-md:min-h-6"
+                title="Switch worktree"
+              >
+                {workspace ? <FolderGit2 className="size-3 shrink-0 text-info" /> : <GitBranch className="size-3 shrink-0" />}
+                {workspace && <span className="truncate text-info">{workspace} ·</span>}
+                <span className="truncate">{wsInfo?.branch ?? wsGit?.branch}</span>
+                {!!wsGit?.dirty && <span className="shrink-0 text-warning"> · {wsGit.dirty} changed</span>}
+                <ChevronDown className="size-3 shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="max-w-80">
+              <DropdownMenuLabel className="text-xs text-muted-foreground">Show files, search and Git of</DropdownMenuLabel>
+              {[worktrees.data.main, ...worktrees.data.worktrees].map(
+                (w) =>
+                  w && (
+                    <DropdownMenuItem key={w.name ?? ""} className="max-md:py-2.5" onClick={() => setWorkspace(w.name ?? null)}>
+                      {w.name ? <FolderGit2 /> : <GitBranch />}
+                      <span className="min-w-0 flex-1 truncate">
+                        {w.name ?? "Project folder"} <span className="text-muted-foreground">({w.branch ?? "detached"})</span>
+                      </span>
+                      {!!w.git?.dirty && <span className="text-xs text-warning">{w.git.dirty}</span>}
+                      {(w.name ?? null) === workspace && <Check />}
+                    </DropdownMenuItem>
+                  ),
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="max-md:py-2.5" onClick={() => setWorktreesOpen(true)}>
+                <Plus /> New / manage worktrees…
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          info?.git && (
+            <p className="truncate text-xs text-muted-foreground">
+              <GitBranch className="mr-1 inline size-3" />
+              {info.git.branch}
+              {info.git.dirty > 0 && <span className="text-warning"> · {info.git.dirty} changed</span>}
+            </p>
+          )
         )}
       </div>
       {!isMobile && (
@@ -549,7 +664,7 @@ export default function ProjectPage() {
               const m = mi.mode;
               const Icon = mi.icon;
               return (
-                <DropdownMenuItem key={m} onClick={() => setNewMode(m)}>
+                <DropdownMenuItem key={m} onClick={() => startSessionIn(workspace, m)}>
                   <Icon /> {mi.label}
                 </DropdownMenuItem>
               );
@@ -562,15 +677,27 @@ export default function ProjectPage() {
 
   const dialog = (
     <>
-    <QuickOpen open={quickOpen} onOpenChange={setQuickOpen} project={project} onOpen={(p) => openFile(p)} />
+    <QuickOpen open={quickOpen} onOpenChange={setQuickOpen} project={ws} onOpen={(p) => openFile(p)} />
     <NewSessionDialog
       open={newMode !== null}
       onOpenChange={(o) => !o && setNewMode(null)}
       project={project}
       initialMode={newMode ?? undefined}
+      initialWorktree={newWorktree}
       onStarted={(name) => {
         setSideOpen(null);
         setActive(`s:${name}`);
+      }}
+    />
+    <WorktreesPanel
+      open={worktreesOpen}
+      onOpenChange={setWorktreesOpen}
+      project={project}
+      current={workspace}
+      onSelect={setWorkspace}
+      onNewSession={(w) => {
+        setWorktreesOpen(false);
+        startSessionIn(w, modes[0]?.mode ?? "bash");
       }}
     />
     </>
@@ -618,7 +745,7 @@ export default function ProjectPage() {
     { tab: "files", label: "File", icon: FolderTree },
     { tab: "search", label: "Search", icon: Search },
     { tab: "editor", label: "Editor", icon: Code, badge: files.length || undefined, dot: dirtyFiles > 0 },
-    { tab: "git", label: "Git", icon: GitBranch, badge: info?.git?.dirty || undefined },
+    { tab: "git", label: "Git", icon: GitBranch, badge: wsGit?.dirty || undefined },
   ];
 
   return (

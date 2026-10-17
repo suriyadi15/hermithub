@@ -36,6 +36,11 @@ CREATE TABLE IF NOT EXISTS activity (
 );
 `);
 
+// Added in 0.4: the git worktree a session ran in ("" or NULL = the project folder).
+if (!db.query<{ name: string }, []>("PRAGMA table_info(sessions)").all().some((c) => c.name === "worktree")) {
+  db.exec("ALTER TABLE sessions ADD COLUMN worktree TEXT");
+}
+
 export function getSetting(key: string): string | null {
   const row = db.query<{ value: string }, [string]>("SELECT value FROM settings WHERE key = ?").get(key);
   return row?.value ?? null;

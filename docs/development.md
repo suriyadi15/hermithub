@@ -8,6 +8,7 @@ server/            Bun + Elysia backend
   src/agents.ts    agent registry (install, login, launch) + /api/agents
   src/sessions.ts  project sessions (tmux) + /api/sessions
   src/tasks.ts     system tasks: installs and logins in tmux + /api/tasks
+  src/worktrees.ts git worktrees per project (parallel tasks) + /api/projects/:project/worktrees
   src/integrations.ts  GitHub, git identity, SSH key
   src/terminal.ts  WebSocket ⇄ tmux attach bridge
   src/tmux.ts      tmux helpers (dedicated socket "hub")
@@ -18,7 +19,7 @@ docker/            entrypoint (PUID/PGID remap) and shell profile
 Dockerfile         multi-stage: deps → build → runtime
 ```
 
-Sessions are tmux sessions on a private socket. Metadata (project, mode, label, task) is stored as tmux
+Sessions are tmux sessions on a private socket. Metadata (project, worktree, mode, label, task) is stored as tmux
 user options (`@hub_*`), so the server can restart without losing track of running sessions.
 
 ## Run locally

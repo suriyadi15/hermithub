@@ -53,6 +53,8 @@ export interface TmuxSession {
   command: string;
   /** Set on system tasks (agent install/login, GitHub login, ...), which have no project. */
   task: string;
+  /** Worktree of the project the session runs in, "" for the project folder itself. */
+  worktree: string;
 }
 
 const FORMAT = [
@@ -69,6 +71,7 @@ const FORMAT = [
   "#{@hub_label}",
   "#{@hub_cmd}",
   "#{@hub_task}",
+  "#{@hub_wt}",
 ].join(SEP);
 
 export function parseSessions(out: string): TmuxSession[] {
@@ -76,7 +79,7 @@ export function parseSessions(out: string): TmuxSession[] {
     .split("\n")
     .filter((l) => l.startsWith("hub-"))
     .map((line) => {
-      const [name, created, activity, attached, dead, deadStatus, pid, project, mode, permission, label, command, task] =
+      const [name, created, activity, attached, dead, deadStatus, pid, project, mode, permission, label, command, task, worktree] =
         line.split(SEP);
       return {
         name: name!,
@@ -92,6 +95,7 @@ export function parseSessions(out: string): TmuxSession[] {
         label: label ?? "",
         command: command ?? "",
         task: task ?? "",
+        worktree: worktree ?? "",
       };
     });
 }

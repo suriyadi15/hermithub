@@ -89,6 +89,11 @@ export function ProjectCard({ project }: { project: Project }) {
               {git.dirty > 0 && <span className="text-warning">● {git.dirty} changed</span>}
               {git.ahead > 0 && <span>↑{git.ahead}</span>}
               {git.behind > 0 && <span>↓{git.behind}</span>}
+              {project.worktrees > 0 && (
+                <span title="Git worktrees (parallel tasks)">
+                  · {project.worktrees} worktree{project.worktrees > 1 ? "s" : ""}
+                </span>
+              )}
             </div>
             {git.lastCommit && (
               <p className="mt-1 truncate">

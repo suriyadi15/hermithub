@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { safePath, validateName } from "../src/paths";
+import { projectDir, safePath, splitWorkspace, validateName } from "../src/paths";
 
 let root: string;
 let outside: string;
@@ -49,4 +49,17 @@ describe("validateName", () => {
   test.each(["", ".hidden", "..", "a/b", "a b", "x.", "-flag", "a".repeat(65)])("rejects %p", (n) =>
     expect(() => validateName(n)).toThrow(),
   );
+});
+
+describe("workspaces", () => {
+  test("splits project and worktree ids", () => {
+    expect(splitWorkspace("app")).toEqual({ project: "app", worktree: null });
+    expect(splitWorkspace("app@login-fix")).toEqual({ project: "app", worktree: "login-fix" });
+  });
+  test.each(["app@", "@wt", "a@b@c", "app@../x", "app@.hidden", "../x@wt"])("rejects %p", (id) =>
+    expect(() => splitWorkspace(id)).toThrow(),
+  );
+  test("worktrees resolve inside the hidden worktrees folder", () => {
+    expect(projectDir("app@login").endsWith(join(".hub-worktrees", "app", "login"))).toBe(true);
+  });
 });

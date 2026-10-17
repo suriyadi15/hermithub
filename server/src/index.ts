@@ -14,6 +14,7 @@ import { sessionRoutes } from "./sessions";
 import { serverStats } from "./stats";
 import { taskRoutes } from "./tasks";
 import { terminalRoutes } from "./terminal";
+import { worktreeRoutes } from "./worktrees";
 import { applyGlobalOptions } from "./tmux";
 
 const PORT = Number(process.env.PORT ?? 8787);
@@ -54,6 +55,7 @@ const api = new Elysia()
   .use(authRoutes)
   .use(projectRoutes)
   .use(gitRoutes)
+  .use(worktreeRoutes)
   .use(fileRoutes)
   .use(searchRoutes)
   .use(sessionRoutes)

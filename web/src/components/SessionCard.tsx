@@ -89,7 +89,7 @@ export function SessionActions({ session, onOpen }: { session: Session; onOpen?:
         open={confirmKill}
         onOpenChange={setConfirmKill}
         title="Stop session?"
-        description={`The process in "${session.label}" (${session.project}) will be stopped. The conversation is kept and can be continued later.`}
+        description={`The process in "${session.label}" (${session.project}${session.worktree ? `@${session.worktree}` : ""}) will be stopped. The conversation is kept and can be continued later.`}
         confirmLabel="Stop"
         destructive
         onConfirm={() => kill.mutate(session.name)}
@@ -121,7 +121,10 @@ export function SessionCard({ session, now }: { session: Session; now: number })
         <SessionActions session={session} />
       </div>
       <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-3 pt-1 text-xs text-muted-foreground">
-        <span className="max-w-full truncate">{session.project}</span>
+        <span className="max-w-full truncate">
+          {session.project}
+          {session.worktree && <span className="text-info"> @ {session.worktree}</span>}
+        </span>
         <span>{STATUS_LABEL[session.status]}</span>
         <span>{duration(now - session.created)}</span>
         {session.status !== "exited" && (

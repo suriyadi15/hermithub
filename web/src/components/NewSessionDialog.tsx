@@ -15,16 +15,19 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { SessionMode } from "@/lib/api";
 import { useModes } from "@/lib/modes";
-import { useStartSession } from "@/lib/queries";
-import { cn } from "@/lib/utils";
+import { useStartSession, useWorktrees } from "@/lib/queries";
+import { cn, worktreeName } from "@/lib/utils";
 
 const RISKY = new Set(["bypassPermissions", "yolo"]);
+const NEW_WORKTREE = "__new";
 
 export function NewSessionDialog(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   project: string;
   initialMode?: SessionMode;
+  /** Worktree to preselect (null = the project folder). */
+  initialWorktree?: string | null;
   onStarted?: (name: string) => void;
 }) {
   const { modes, info, hasAgents } = useModes();
@@ -36,6 +39,13 @@ export function NewSessionDialog(props: {
   const [resume, setResume] = useState(false);
   const [spawn, setSpawn] = useState<"same-dir" | "worktree">("same-dir");
   const agent = info(mode).agent;
+  const worktrees = useWorktrees(props.project, props.open);
+  const repo = worktrees.data?.repo ? worktrees.data : null;
+  const [where, setWhere] = useState("");
+  const [branch, setBranch] = useState("");
+  const [base, setBase] = useState("");
+  const isNew = where === NEW_WORKTREE;
+  const newName = worktreeName(branch);
 
   useEffect(() => {
     if (!props.open) return;
@@ -43,7 +53,10 @@ export function NewSessionDialog(props: {
     setLabel("");
     setResume(false);
     setSpawn("same-dir");
-  }, [props.open, firstMode]);
+    setWhere(props.initialWorktree ?? "");
+    setBranch("");
+    setBase("");
+  }, [props.open, firstMode, props.initialWorktree]);
 
   // Each agent has its own permission modes; start from the default saved in Settings.
   useEffect(() => {
@@ -57,8 +70,10 @@ export function NewSessionDialog(props: {
         mode,
         permission: agent ? permission || undefined : undefined,
         label: label.trim() || undefined,
-        resume: !!agent && resume,
+        resume: !!agent && resume && !isNew,
         spawn: mode === "rc" ? spawn : undefined,
+        worktree: !isNew && where ? where : undefined,
+        newWorktree: isNew ? { name: newName, branch: branch.trim(), base: base.trim() || undefined } : undefined,
       },
       {
         onSuccess: (r) => {
@@ -153,10 +168,62 @@ export function NewSessionDialog(props: {
                 </Select>
               </div>
             )}
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox checked={resume} onCheckedChange={(v) => setResume(v === true)} />
-              Continue the last conversation in this project
-            </label>
+            {!isNew && (
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox checked={resume} onCheckedChange={(v) => setResume(v === true)} />
+                Continue the last conversation in this {where ? "worktree" : "project"}
+              </label>
+            )}
+          </div>
+        )}
+
+        {repo && (
+          <div className="grid gap-2">
+            <Label>Run in</Label>
+            <Select value={where || "main"} onValueChange={(v) => setWhere(v === "main" ? "" : v)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="main">Project folder ({repo.main?.branch ?? "detached"})</SelectItem>
+                {repo.worktrees.map((w) => (
+                  <SelectItem key={w.name} value={w.name!}>
+                    Worktree {w.name} ({w.branch ?? "detached"})
+                  </SelectItem>
+                ))}
+                <SelectItem value={NEW_WORKTREE}>+ New worktree (separate folder and branch)…</SelectItem>
+              </SelectContent>
+            </Select>
+            {isNew && (
+              <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="wt-branch">New branch</Label>
+                  <Input
+                    id="wt-branch"
+                    autoFocus
+                    placeholder="e.g. feat/login"
+                    value={branch}
+                    maxLength={100}
+                    onChange={(e) => setBranch(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="wt-base">From</Label>
+                  <Input
+                    id="wt-base"
+                    placeholder={repo.main?.branch ?? "HEAD"}
+                    value={base}
+                    maxLength={100}
+                    onChange={(e) => setBase(e.target.value)}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground sm:col-span-2">
+                  {newName
+                    ? `Folder "${newName}" on branch "${branch.trim()}". An existing branch is checked out as is.`
+                    : "Each task gets its own folder and branch, so sessions do not touch each other's files."}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -175,7 +242,7 @@ export function NewSessionDialog(props: {
           <Button variant="ghost" onClick={() => props.onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={start.isPending}>
+          <Button onClick={submit} disabled={start.isPending || (isNew && !newName)}>
             {start.isPending ? "Starting…" : "Start"}
           </Button>
         </DialogFooter>

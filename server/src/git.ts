@@ -11,7 +11,7 @@ export const GIT_ENV = {
 
 const NETWORK_TIMEOUT = 120_000;
 
-function git(cwd: string, ...args: string[]) {
+export function git(cwd: string, ...args: string[]) {
   return gitT(cwd, 15_000, ...args);
 }
 
@@ -20,7 +20,7 @@ function gitT(cwd: string, timeoutMs: number, ...args: string[]) {
 }
 
 /** Run a git command that must succeed; its output (stdout + stderr) goes back to the UI. */
-async function run(cwd: string, args: string[], timeoutMs = 30_000) {
+export async function run(cwd: string, args: string[], timeoutMs = 30_000) {
   const r = await gitT(cwd, timeoutMs, ...args);
   const output = [r.stdout, r.stderr].map((s) => s.trim()).filter(Boolean).join("\n");
   if (r.code !== 0) throw new HttpError(400, output || `git ${args[0]} failed (exit ${r.code})`);
@@ -150,7 +150,7 @@ function pathspecs(project: string, paths: string[]) {
   });
 }
 
-function checkBranchName(name: string) {
+export function checkBranchName(name: string) {
   if (!name || name.startsWith("-") || /[\s~^:?*[\\]|\.\.|@\{|\.lock$|\/$|^\//.test(name)) {
     throw new HttpError(400, `Invalid branch name: ${name}`);
   }
@@ -350,4 +350,20 @@ export const gitRoutes = new Elysia({ prefix: "/api/projects/:project/git" })
       return { ok: true, output: await run(dir, args) };
     },
     { body: t.Object({ action: t.Union([t.Literal("push"), t.Literal("pop")]), message: t.Optional(t.String()) }) },
-  );
+  )
+  /** Merge another branch (e.g. a worktree's) into the branch checked out here. */
+  .post(
+    "/merge",
+    async ({ params, body }) => {
+      const dir = projectDir(params.project);
+      const args = ["merge", "--no-edit", ...(body.noFf ? ["--no-ff"] : []), checkBranchName(body.branch)];
+      const output = await run(dir, args);
+      logActivity("git_merge", `${params.project} ← ${body.branch}`);
+      return { ok: true, output };
+    },
+    { body: t.Object({ branch: t.String(), noFf: t.Optional(t.Boolean()) }) },
+  )
+  .post("/merge/abort", async ({ params }) => {
+    const dir = projectDir(params.project);
+    return { ok: true, output: await run(dir, ["merge", "--abort"]) };
+  });

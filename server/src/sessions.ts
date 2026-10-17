@@ -4,7 +4,7 @@ import { Elysia, t } from "elysia";
 import { agentEnv, binPath, getAgent, permissionArgs, type AgentDef } from "./agents";
 import { db, logActivity } from "./db";
 import { exec, HttpError } from "./exec";
-import { isDir, projectDir } from "./paths";
+import { isDir, projectDir, projectRoot, workspaceId } from "./paths";
 import {
   capture,
   findRemoteUrl,
@@ -17,6 +17,7 @@ import {
   stopSession,
   tailLines,
 } from "./tmux";
+import { createWorktree } from "./worktrees";
 
 /** A session runs an agent from AGENTS (by id), Claude remote control ("rc"), or a plain shell ("bash"). */
 export type Mode = string;
@@ -106,6 +107,7 @@ export async function sessionList(project?: string) {
         project: s.project,
         mode: s.mode,
         permission: s.permission,
+        worktree: s.worktree || null,
         label: s.label,
         created: s.created,
         activity: s.activity,
@@ -139,16 +141,25 @@ export async function startSession(input: {
   label?: string;
   resume?: boolean;
   spawn?: string;
+  /** Run in this existing worktree of the project. */
+  worktree?: string;
+  /** Create a worktree first and run the session in it. */
+  newWorktree?: { name: string; branch?: string; base?: string };
 }) {
-  const cwd = projectDir(input.project);
-  if (!(await isDir(cwd))) throw new HttpError(404, "Project not found");
+  if (!(await isDir(projectRoot(input.project)))) throw new HttpError(404, "Project not found");
   const agent = sessionAgent(input.mode);
   if (agent && !binPath(agent)) throw new HttpError(400, `${agent.name} is not installed yet. Install it in Settings.`);
   if (agent && input.permission && !agent.permissionModes.some((m) => m.id === input.permission)) {
     throw new HttpError(400, `Unknown permission mode for ${agent.name}`);
   }
+  // Validate everything else before creating a worktree, so a bad request leaves nothing behind.
+  const worktree = input.newWorktree
+    ? (await createWorktree(input.project, input.newWorktree)).name
+    : input.worktree || null;
+  const cwd = projectDir(workspaceId(input.project, worktree));
+  if (!(await isDir(cwd))) throw new HttpError(404, "Worktree not found");
   const name = `hub-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
-  const label = input.label?.trim() || input.project;
+  const label = input.label?.trim() || worktree || input.project;
   const command = buildCommand(input.mode, {
     permission: input.permission,
     name: label,
@@ -167,12 +178,13 @@ export async function startSession(input: {
       perm: input.permission ?? "default",
       label,
       cmd: command.join(" "),
+      wt: worktree ?? "",
     },
   });
   db.query(
-    "INSERT INTO sessions (name, project, mode, permission, label, started_at) VALUES (?, ?, ?, ?, ?, ?)",
-  ).run(name, input.project, input.mode, input.permission ?? "default", label, Date.now());
-  logActivity("session_start", `${input.project} ${input.mode}${input.resume ? " (resume)" : ""}`);
+    "INSERT INTO sessions (name, project, mode, permission, label, started_at, worktree) VALUES (?, ?, ?, ?, ?, ?, ?)",
+  ).run(name, input.project, input.mode, input.permission ?? "default", label, Date.now(), worktree);
+  logActivity("session_start", `${workspaceId(input.project, worktree)} ${input.mode}${input.resume ? " (resume)" : ""}`);
   return { name };
 }
 
@@ -190,7 +202,16 @@ export const sessionRoutes = new Elysia({ prefix: "/api/sessions" })
     ({ query }) =>
       db
         .query<
-          { name: string; project: string; mode: Mode; permission: string; label: string; started_at: number; ended_at: number },
+          {
+            name: string;
+            project: string;
+            mode: Mode;
+            permission: string;
+            label: string;
+            started_at: number;
+            ended_at: number;
+            worktree: string | null;
+          },
           [string, string]
         >(
           "SELECT * FROM sessions WHERE ended_at IS NOT NULL AND (? = '' OR project = ?) ORDER BY ended_at DESC LIMIT 20",
@@ -206,11 +227,19 @@ export const sessionRoutes = new Elysia({ prefix: "/api/sessions" })
       label: t.Optional(t.String({ maxLength: 60 })),
       resume: t.Optional(t.Boolean()),
       spawn: t.Optional(t.UnionEnum(SPAWN_MODES)),
+      worktree: t.Optional(t.String({ maxLength: 64 })),
+      newWorktree: t.Optional(
+        t.Object({
+          name: t.String({ minLength: 1, maxLength: 64 }),
+          branch: t.Optional(t.String({ maxLength: 200 })),
+          base: t.Optional(t.String({ maxLength: 200 })),
+        }),
+      ),
     }),
   })
   .post("/:name/restart", async ({ params }) => {
     const s = await requireSession(params.name);
-    const cwd = projectDir(s.project);
+    const cwd = projectDir(workspaceId(s.project, s.worktree));
     // Restarting an agent session continues the previous conversation instead of starting blank.
     const agent = sessionAgent(s.mode);
     const command = buildCommand(s.mode, { permission: s.permission, name: s.label, resume: !!agent });

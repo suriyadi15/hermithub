@@ -3,9 +3,10 @@ import { join } from "node:path";
 import { Elysia, t } from "elysia";
 import { logActivity } from "./db";
 import { exec, HttpError } from "./exec";
-import { GIT_ENV, gitSummary } from "./git";
-import { isDir, PROJECTS_DIR, projectDir, TRASH_DIR, validateName } from "./paths";
+import { git, GIT_ENV, gitSummary } from "./git";
+import { isDir, PROJECTS_DIR, projectRoot, projectWorktreesDir, TRASH_DIR, validateName } from "./paths";
 import { listSessions } from "./tmux";
+import { worktreeCount } from "./worktrees";
 
 async function exists(p: string) {
   return stat(p).then(
@@ -21,12 +22,13 @@ export async function listProjects() {
   const projects = await Promise.all(
     dirs.map(async (e) => {
       const dir = join(PROJECTS_DIR, e.name);
-      const [st, git] = await Promise.all([stat(dir), gitSummary(dir)]);
+      const [st, summary, worktrees] = await Promise.all([stat(dir), gitSummary(dir), worktreeCount(e.name)]);
       const own = sessions.filter((s) => s.project === e.name);
       return {
         name: e.name,
         modified: st.mtimeMs,
-        git,
+        git: summary,
+        worktrees,
         sessions: { total: own.length, running: own.filter((s) => !s.dead).length },
       };
     }),
@@ -51,7 +53,7 @@ export async function createProject(input: { name?: string; type: "empty" | "git
     const url = input.url?.trim() ?? "";
     if (!/^(https?:\/\/|ssh:\/\/|git@)[^\s]+$/.test(url)) throw new HttpError(400, "Invalid repository URL");
     const name = validateName(input.name?.trim() || repoName(url));
-    const dir = projectDir(name);
+    const dir = projectRoot(name);
     if (await exists(dir)) throw new HttpError(409, "A project with this name already exists");
     const r = await exec(["git", "clone", "--", url, dir], { env: GIT_ENV, timeoutMs: 10 * 60_000 });
     if (r.code !== 0) {
@@ -62,7 +64,7 @@ export async function createProject(input: { name?: string; type: "empty" | "git
     return { name };
   }
   const name = validateName(input.name?.trim() ?? "");
-  const dir = projectDir(name);
+  const dir = projectRoot(name);
   if (await exists(dir)) throw new HttpError(409, "A project with this name already exists");
   await mkdir(dir);
   if (input.type === "git-init") await exec(["git", "init", "-q", "-b", "main"], { cwd: dir });
@@ -71,20 +73,30 @@ export async function createProject(input: { name?: string; type: "empty" | "git
 }
 
 export async function renameProject(from: string, to: string) {
-  const src = projectDir(from);
-  const dst = projectDir(validateName(to));
+  const src = projectRoot(from);
+  const dst = projectRoot(validateName(to));
   if (!(await isDir(src))) throw new HttpError(404, "Project not found");
   if (await exists(dst)) throw new HttpError(409, "That name is already taken");
   await assertNoSessions(from);
   await rename(src, dst);
+  // Worktrees move along; git keeps absolute paths in both directions, so repair them afterwards.
+  const wtFrom = projectWorktreesDir(from);
+  if (await isDir(wtFrom)) {
+    const wtTo = projectWorktreesDir(to);
+    await rename(wtFrom, wtTo);
+    const dirs = (await readdir(wtTo, { withFileTypes: true })).filter((e) => e.isDirectory());
+    if (dirs.length) await git(dst, "worktree", "repair", ...dirs.map((e) => join(wtTo, e.name)));
+  }
   logActivity("project_rename", `${from} → ${to}`);
   return { name: to };
 }
 
 export async function trashProject(name: string) {
-  const src = projectDir(name);
+  const src = projectRoot(name);
   if (!(await isDir(src))) throw new HttpError(404, "Project not found");
   await assertNoSessions(name);
+  const worktrees = await worktreeCount(name);
+  if (worktrees) throw new HttpError(409, `This project has ${worktrees} worktree(s). Remove them first.`);
   await mkdir(TRASH_DIR, { recursive: true });
   const id = `${name}__${Date.now()}`;
   await rename(src, join(TRASH_DIR, id));
@@ -112,7 +124,7 @@ export async function restoreTrash(id: string, as?: string) {
   const src = trashPath(id);
   if (!(await isDir(src))) throw new HttpError(404, "Trash item not found");
   const name = validateName(as?.trim() || id.slice(0, id.lastIndexOf("__")));
-  const dst = projectDir(name);
+  const dst = projectRoot(name);
   if (await exists(dst)) throw new HttpError(409, `Project "${name}" already exists; restore it under another name`);
   await rename(src, dst);
   logActivity("project_restore", name);

@@ -8,6 +8,8 @@ export const PROJECTS_DIR = resolve(process.env.PROJECTS_DIR ?? join(process.env
 export const DATA_DIR = resolve(process.env.DATA_DIR ?? join(process.env.HOME ?? "/root", ".project-hub"));
 /** Trash lives inside PROJECTS_DIR so moving a project there is an atomic rename on the same filesystem. */
 export const TRASH_DIR = join(PROJECTS_DIR, ".hub-trash");
+/** Git worktrees of a project live in WORKTREES_DIR/<project>/<worktree>, hidden from the project list. */
+export const WORKTREES_DIR = join(PROJECTS_DIR, ".hub-worktrees");
 
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 
@@ -55,10 +57,42 @@ export function safePath(rel: string, root = PROJECTS_DIR): string {
   return real;
 }
 
-/** Absolute directory of a project; the project name must be a single valid segment. */
-export function projectDir(project: string): string {
+/** Absolute directory of a project itself (never a worktree); the name must be a single valid segment. */
+export function projectRoot(project: string): string {
   validateName(project);
   return safePath(project);
+}
+
+/**
+ * A workspace id is a project name ("app") or one of its worktrees ("app@login-fix").
+ * '@' is not allowed in names, so the split is unambiguous.
+ */
+export function splitWorkspace(id: string): { project: string; worktree: string | null } {
+  const parts = id.split("@");
+  if (parts.length > 2) throw new PathError("Invalid workspace");
+  const [project, worktree] = parts as [string, string | undefined];
+  validateName(project);
+  if (worktree !== undefined) validateName(worktree);
+  return { project, worktree: worktree ?? null };
+}
+
+export function workspaceId(project: string, worktree?: string | null) {
+  return worktree ? `${project}@${worktree}` : project;
+}
+
+/** Folder that holds all worktrees of a project. */
+export function projectWorktreesDir(project: string): string {
+  return safePath(join(".hub-worktrees", validateName(project)));
+}
+
+export function worktreeDir(project: string, worktree: string): string {
+  return safePath(join(".hub-worktrees", validateName(project), validateName(worktree)));
+}
+
+/** Absolute directory of a workspace: a project or one of its worktrees (see splitWorkspace). */
+export function projectDir(id: string): string {
+  const { project, worktree } = splitWorkspace(id);
+  return worktree ? worktreeDir(project, worktree) : projectRoot(project);
 }
 
 export async function isDir(p: string) {

@@ -20,6 +20,8 @@ set up from the dashboard.
 - **Monitoring**: active / waiting / exited status, CPU and RAM per session, last output lines, server load.
 - **Files**: file tree, Monaco editor (Ctrl+S), quick open (Ctrl+P), search across files, upload / download.
 - **Git**: stage, commit, push, pull, branches, stash, diffs, recent commits.
+- **Parallel tasks with git worktrees**: give each task its own folder and branch, run an agent in each,
+  switch the file tree and Git panel between them, then merge back and clean up.
 - **Mobile friendly**: bottom navigation, a text box for long prompts, sticky Ctrl, arrow keys, history scrolling.
 
 ## How it works
@@ -106,6 +108,7 @@ somewhere else or share folders with the host.
 - [Install with an AI agent](docs/ai-install.md) — skill for Claude Code, Codex and other agents
 - [Configuration](docs/configuration.md) — `.env` options, data folders, resource limits
 - [Agents](docs/agents.md) — installing, logging in, API keys, permission modes
+- [Parallel tasks with worktrees](docs/worktrees.md) — one folder and branch per task, merge, clean up
 - [GitHub & git](docs/github.md) — connecting GitHub, other git servers
 - [Remote access](docs/reverse-proxy.md) — built-in HTTPS, Caddy / nginx, Cloudflare Tunnel, SSH tunnel
 - [Security](docs/security.md) — what the dashboard can do and how it is protected

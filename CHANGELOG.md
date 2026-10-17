@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **Worktrees for parallel tasks.** **+ Session → Run in → New worktree** creates a separate folder and
+  branch per task and starts the agent there. The file tree, search, editor and Git panel follow the
+  selected session (or the switcher in the header). The new worktrees panel shows each task's branch,
+  changes and sessions, merges a branch back with one click and removes finished worktrees, optionally
+  with their branch. Renaming a project keeps its worktrees working. See [docs/worktrees.md](docs/worktrees.md).
+- Git panel API: `POST /git/merge` and `/git/merge/abort`.
+
 ## 0.3.0 — 2026-10-17
 
 - New agents: **OpenCode**, **GitHub Copilot CLI**, **Qwen Code** and **Crush** — installed, updated and
