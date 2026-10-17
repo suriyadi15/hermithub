@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — 2026-10-17
 
 - **Worktrees for parallel tasks.** **+ Session → Run in → New worktree** creates a separate folder and
   branch per task and starts the agent there. The file tree, search, editor and Git panel follow the
