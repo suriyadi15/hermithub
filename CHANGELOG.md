@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-10-17
 
 - **Install without Docker.** Each release now ships a standalone `project-hub` executable for Linux (x64/arm64,
   glibc and musl) and macOS (Intel/Apple silicon), with the frontend built in. `install.sh` installs it by default.
