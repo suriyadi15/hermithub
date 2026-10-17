@@ -7,6 +7,8 @@ the tab: sessions keep running on the server.
 
 Agents, their logins, GitHub access and git settings are all set up from the dashboard.
 
+**Website and docs: [project-hub.pages.dev](https://project-hub.pages.dev)**
+
 ## Features
 
 - **Projects**: create (empty folder, `git init` or `git clone`), rename, move to trash, restore.
