@@ -1,0 +1,166 @@
+---
+title: Project Hub
+description: A self-hosted web dashboard for your code projects and AI coding agents. Start Claude Code, Codex, Gemini CLI and more from any browser, and close the tab without stopping them.
+template: splash
+editUrl: false
+hero:
+  title: Your AI coding agents, in a tab that never closes
+  tagline: >-
+    A self-hosted dashboard for your code projects and AI coding agents. Start Claude Code, Codex CLI,
+    Gemini CLI and more from any browser, phone included, then close the tab. Sessions keep running on
+    your server.
+  actions:
+    - text: Get started
+      link: /docs/installation/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/suriyadi15/project-hub
+      icon: github
+      variant: minimal
+---
+
+import { Card, CardGrid, Tabs, TabItem, Code, Aside, LinkButton } from "@astrojs/starlight/components";
+import { Image } from "astro:assets";
+import dashboard from "../../assets/screenshots/dashboard.png";
+import session from "../../assets/screenshots/session.png";
+import editor from "../../assets/screenshots/editor.png";
+import git from "../../assets/screenshots/git.png";
+import mobile from "../../assets/screenshots/mobile-project.png";
+
+<Image
+  class="screenshot"
+  src={dashboard}
+  widths={[720, 1440, 2880]}
+  sizes="(min-width: 72rem) 72rem, 100vw"
+  alt="Project Hub dashboard showing four running sessions with their last output lines, server load, memory and disk, and the project list"
+  loading="eager"
+/>
+
+## Install in one line
+
+Linux (x86_64 / arm64) or macOS. The installer adds tmux and git if they are missing, runs Project Hub
+as a user service and prints a setup link. Open it, choose a password, and install an agent from
+**Settings**.
+
+<Tabs>
+  <TabItem label="Standalone">
+    <Code lang="bash" code="curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash" />
+  </TabItem>
+  <TabItem label="Docker">
+    <Code lang="bash" code="curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --docker" />
+  </TabItem>
+  <TabItem label="Docker + HTTPS">
+    <Code lang="bash" code="curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --docker --domain hub.example.com" />
+  </TabItem>
+  <TabItem label="Ask your agent">
+    Install the Project Hub skill, then ask *"Install Project Hub on this machine"*.
+    <Code lang="text" code="/plugin install project-hub --marketplace suriyadi15/project-hub" />
+    [Other agents →](/docs/ai-install/)
+  </TabItem>
+</Tabs>
+
+## A look inside
+
+<Tabs>
+  <TabItem label="Sessions">
+    <Image class="screenshot" src={session} widths={[720, 1440]} alt="A project page with the file tree on the left and a terminal session running tests" />
+  </TabItem>
+  <TabItem label="Editor">
+    <Image class="screenshot" src={editor} widths={[720, 1440]} alt="The Monaco editor open on a TypeScript file next to the project's file tree" />
+  </TabItem>
+  <TabItem label="Git">
+    <Image class="screenshot" src={git} widths={[720, 1440]} alt="The Git panel with a commit box, changed files and recent commits" />
+  </TabItem>
+  <TabItem label="Phone">
+    <Image class="screenshot phone" src={mobile} widths={[390, 780]} alt="Project Hub on a phone: a terminal session, a prompt box, special keys and bottom navigation" />
+  </TabItem>
+</Tabs>
+
+## Every agent you use
+
+<ul class="agents">
+  <li>Claude Code</li>
+  <li>Codex CLI</li>
+  <li>Gemini CLI</li>
+  <li>OpenCode</li>
+  <li>GitHub Copilot CLI</li>
+  <li>Qwen Code</li>
+  <li>Crush</li>
+  <li>bash</li>
+</ul>
+
+Install, update and log in to each agent from the browser, or paste an API key. Pick a permission mode
+per session, continue the last conversation, or drive a Claude session from claude.ai/code with
+**Remote Control**. [Supporting another CLI](/docs/adding-an-agent/) takes a few lines.
+
+## Features
+
+<CardGrid>
+  <Card title="Agent sessions" icon="laptop">
+    Several sessions per project, each in a web terminal backed by tmux. Close the browser, lose your
+    connection: they keep running.
+  </Card>
+  <Card title="Monitoring" icon="analytics">
+    Active, waiting or exited status, CPU and RAM per session, the last output lines and server load at a
+    glance.
+  </Card>
+  <Card title="Files" icon="document">
+    File tree, Monaco editor (Ctrl+S), quick open (Ctrl+P), search across files, upload and download.
+  </Card>
+  <Card title="Git" icon="code-branch">
+    Stage, commit, push, pull, branches, stash, diffs and recent commits. Connect GitHub with a device code
+    or token.
+  </Card>
+  <Card title="Parallel tasks" icon="random">
+    Give each task its own git worktree and branch, run an agent in each, then merge back and clean up.
+    [Learn more](/docs/worktrees/)
+  </Card>
+  <Card title="Mobile friendly" icon="mobile-android">
+    Bottom navigation, a text box for long prompts, sticky Ctrl, arrow keys and history scrolling.
+  </Card>
+  <Card title="Projects" icon="open-book">
+    Create an empty folder, `git init` or `git clone`. Rename, move to trash and restore.
+  </Card>
+  <Card title="Updates" icon="cloud-download">
+    Update from the dashboard with one click or `project-hub update`, with optional auto-update.
+  </Card>
+</CardGrid>
+
+## How it works
+
+The browser talks to a small Bun server, and every agent runs inside a tmux session on that server. The
+server runs as a standalone executable (a user service on your machine) or in a Docker container.
+
+<img
+  class="diagram"
+  alt="Project Hub architecture: browser, optional Caddy, the Project Hub server with its REST API and terminal WebSocket, tmux sessions running the agents, and the data folders"
+  src="https://mermaid.ink/img/Zmxvd2NoYXJ0IFRCCiAgICB1c2VyWyJCcm93c2VyIC8gcGhvbmU8YnIvPlJlYWN0IFVJIMK3IHh0ZXJtLmpzIMK3IE1vbmFjbyJdCiAgICBjYWRkeVsiQ2FkZHkgKG9wdGlvbmFsKTxici8-SFRUUFMgZm9yIC0tZG9tYWluIl0KCiAgICBzdWJncmFwaCBjb250YWluZXJbIkRvY2tlciBjb250YWluZXIiXQogICAgICAgIHNlcnZlclsiUHJvamVjdCBIdWIgc2VydmVyIMK3IEJ1biArIEVseXNpYSDCtyA6ODc4Nzxici8-cGFzc3dvcmQgbG9naW4gKyBvcmlnaW4gY2hlY2siXQogICAgICAgIGFwaVsiUkVTVCAvYXBpLyo8YnIvPnByb2plY3RzIMK3IGZpbGVzIMK3IGdpdCDCtyBzZWFyY2g8YnIvPnNlc3Npb25zIMK3IGFnZW50cyDCtyBzZXR0aW5ncyJdCiAgICAgICAgd3NbIldlYlNvY2tldCAvd3MvdGVybS86bmFtZTxici8-bGl2ZSB0ZXJtaW5hbCJdCiAgICAgICAgdG11eFsidG11eCAocHJpdmF0ZSBzb2NrZXQpPGJyLz5vbmUgdG11eCBzZXNzaW9uIHBlciBhZ2VudCBzZXNzaW9uIl0KICAgICAgICBhZ2VudHNbIkNsYXVkZSBDb2RlIMK3IENvZGV4IENMSTxici8-R2VtaW5pIENMSSDCtyBiYXNoIl0KICAgIGVuZAoKICAgIHN1YmdyYXBoIGRhdGFbIi4vZGF0YSBvbiB0aGUgaG9zdCJdCiAgICAgICAgcHJvamVjdHNbKCJwcm9qZWN0cy88YnIvPnlvdXIgY29kZSIpXQogICAgICAgIGhvbWVbKCJob21lLzxici8-YWdlbnRzLCBsb2dpbnMsPGJyLz5naXQgJiBTU0ggY29uZmlnIildCiAgICAgICAgZGJbKCJkYi88YnIvPlNRTGl0ZSIpXQogICAgZW5kCgogICAgY2xvdWRbIkFJIHByb3ZpZGVycyDCtyBHaXRIdWI8YnIvPm90aGVyIGdpdCBzZXJ2ZXJzIl0KCiAgICB1c2VyIC0tICJIVFRQUyIgLS0-IGNhZGR5CiAgICBjYWRkeSAtLT4gc2VydmVyCiAgICB1c2VyIC0uICJsb2NhbGhvc3QgLyB0dW5uZWwiIC4tPiBzZXJ2ZXIKICAgIHNlcnZlciAtLT4gYXBpCiAgICBzZXJ2ZXIgLS0-IHdzCiAgICBhcGkgLS0gInN0YXJ0IC8gc3RvcCAvIHN0YXR1cyIgLS0-IHRtdXgKICAgIHdzIC0tICJhdHRhY2ggKFBUWSkiIC0tPiB0bXV4CiAgICB0bXV4IC0tPiBhZ2VudHMKICAgIGFwaSAtLT4gZGIKICAgIGFwaSAtLT4gcHJvamVjdHMKICAgIGFnZW50cyAtLT4gcHJvamVjdHMKICAgIGFnZW50cyAtLT4gaG9tZQogICAgYWdlbnRzIC0tPiBjbG91ZAo?type=png&bgColor=!white&width=1600"
+/>
+
+- **Two ways to run it.** The standalone executable needs only tmux and git and uses your own user
+  account. The Docker image keeps agents in a container, and everything in `./data`.
+- **Sessions are tmux sessions.** Closing the browser does not stop them, and neither does restarting
+  the standalone service.
+- **Every request** needs a logged-in session and must come from an allowed origin.
+
+<Aside type="caution" title="It is a remote shell">
+  The dashboard gives full shell access to your user account (standalone) or the container (Docker),
+  including your agent and GitHub credentials. It listens on `127.0.0.1` by default. Expose it only over
+  HTTPS, with a strong password, ideally behind Cloudflare Access or a VPN.
+  [Read the security guide](/docs/security/).
+</Aside>
+
+## Read the docs
+
+<CardGrid>
+  <Card title="Installation" icon="rocket">
+    Standalone or Docker, installer options, updating and uninstalling.
+    <LinkButton href="/docs/installation/" variant="minimal" icon="right-arrow">Install</LinkButton>
+  </Card>
+  <Card title="Remote access" icon="external">
+    Built-in HTTPS, Caddy or nginx, Cloudflare Tunnel, SSH tunnel.
+    <LinkButton href="/docs/reverse-proxy/" variant="minimal" icon="right-arrow">Connect</LinkButton>
+  </Card>
+</CardGrid>
+
+Free and open source under the [MIT license](https://github.com/suriyadi15/project-hub/blob/main/LICENSE).
