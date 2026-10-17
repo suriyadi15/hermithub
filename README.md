@@ -39,6 +39,10 @@ On a server with a domain name, get HTTPS with automatic certificates in the sam
 curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --domain hub.example.com
 ```
 
+Or let your AI agent do it: install the [Project Hub skill](docs/ai-install.md) (Claude Code:
+`/plugin install project-hub --marketplace suriyadi15/project-hub`) and ask *"Install Project Hub on this
+machine"*.
+
 Prefer to do it by hand? It is just a compose file:
 
 ```bash
@@ -77,6 +81,7 @@ somewhere else or share folders with the host.
 ## Documentation
 
 - [Installation](docs/installation.md) — requirements, installer options, manual install, uninstall
+- [Install with an AI agent](docs/ai-install.md) — skill for Claude Code, Codex and other agents
 - [Configuration](docs/configuration.md) — `.env` options, data folders, resource limits
 - [Agents](docs/agents.md) — installing, logging in, API keys, permission modes
 - [GitHub & git](docs/github.md) — connecting GitHub, other git servers

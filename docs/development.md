@@ -56,6 +56,12 @@ bun test server
 
 CI runs both, builds the frontend and the image. Tagging `vX.Y.Z` publishes a multi-arch image to GHCR.
 
+## Agent skill
+
+`skills/project-hub/SKILL.md` documents the installer for AI agents. When installer flags, `.env` options or
+operating commands change, update it (and `references/troubleshooting.md`), then check it with
+`claude plugin validate --strict .`.
+
 ## Releasing
 
 1. Update `CHANGELOG.md` and the `version` in `package.json`.

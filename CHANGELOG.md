@@ -11,3 +11,5 @@ First open-source release.
   with optional API keys and per-agent permission modes.
 - GitHub login from the dashboard (device code or token), git identity and SSH key settings.
 - English UI.
+- Agent Skill (`skills/project-hub`) so Claude Code, Codex and other agents can install and operate Project Hub;
+  installable as a Claude Code plugin.
