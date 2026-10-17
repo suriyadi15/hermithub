@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { ago } from "@/lib/format";
 import { useCreateWorktree, useMerge, useRemoveWorktree, useWorktrees } from "@/lib/queries";
 import { cn, worktreeName } from "@/lib/utils";
+import { RefCombobox } from "./RefCombobox";
 import { ConfirmDialog } from "./dialogs";
 
 type Worktree = NonNullable<NonNullable<ReturnType<typeof useWorktrees>["data"]>["main"]>;
@@ -160,14 +161,13 @@ export function WorktreesPanel(props: {
                   maxLength={100}
                   onChange={(e) => setBranch(e.target.value)}
                 />
-                <Input
-                  className="w-32"
-                  placeholder={main?.branch ?? "HEAD"}
-                  aria-label="Start from"
-                  title="Start from this branch or commit"
+                <RefCombobox
+                  className="w-40"
+                  project={props.project}
+                  enabled={props.open}
                   value={base}
-                  maxLength={100}
-                  onChange={(e) => setBase(e.target.value)}
+                  onChange={setBase}
+                  defaultLabel={main?.branch ?? "HEAD"}
                 />
                 <Button type="submit" disabled={!name || create.isPending}>
                   <Plus /> {create.isPending ? "Creating…" : "Create"}

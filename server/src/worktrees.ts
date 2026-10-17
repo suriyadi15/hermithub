@@ -104,10 +104,12 @@ export async function createWorktree(project: string, input: { name: string; bra
   if (await stat(dir).then(() => true, () => false)) throw new HttpError(409, `Worktree "${name}" already exists`);
   const branch = checkBranchName(input.branch?.trim() || name);
   const exists = (await git(root, "rev-parse", "--verify", "-q", `refs/heads/${branch}`)).code === 0;
+  const base = !exists && input.base?.trim() ? checkBranchName(input.base.trim()) : null;
+  if (base && (await git(root, "rev-parse", "--verify", "-q", `${base}^{commit}`)).code !== 0) {
+    throw new HttpError(400, `Unknown branch, tag or commit: ${base}`);
+  }
   // An existing branch is checked out as is (git refuses if another worktree already has it).
-  const args = exists
-    ? ["worktree", "add", dir, branch]
-    : ["worktree", "add", "-b", branch, dir, ...(input.base?.trim() ? [checkBranchName(input.base.trim())] : [])];
+  const args = exists ? ["worktree", "add", dir, branch] : ["worktree", "add", "-b", branch, dir, ...(base ? [base] : [])];
   const output = await run(root, args, 120_000);
   logActivity("worktree_add", `${project}@${name} (${branch})`);
   return { name, branch, output };

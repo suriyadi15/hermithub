@@ -37,6 +37,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { api, unwrap } from "@/lib/api";
 import { ago } from "@/lib/format";
+import { useBranches } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { ConfirmDialog } from "./dialogs";
 
@@ -101,11 +102,7 @@ function BranchDialog(props: {
   onDelete: (branch: string) => void;
 }) {
   const [filter, setFilter] = useState("");
-  const branches = useQuery({
-    queryKey: ["git-branches", props.project],
-    queryFn: () => unwrap(api.projects({ project: props.project }).git.branches.get()),
-    enabled: props.open,
-  });
+  const branches = useBranches(props.project, props.open);
   const all = branches.data ?? [];
   const localNames = new Set(all.filter((b) => !b.remote).map((b) => b.name));
   const f = filter.trim().toLowerCase();

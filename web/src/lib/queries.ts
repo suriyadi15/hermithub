@@ -100,6 +100,24 @@ export function useRenameSession() {
   });
 }
 
+/** Local and remote branches of a project, most recently committed first. */
+export function useBranches(project: string, enabled = true) {
+  return useQuery({
+    queryKey: ["git-branches", project],
+    queryFn: () => unwrap(api.projects({ project }).git.branches.get()),
+    enabled,
+  });
+}
+
+/** Branches, tags and recent commits: what a new worktree can start from. */
+export function useRefs(project: string, enabled = true) {
+  return useQuery({
+    queryKey: ["git-refs", project],
+    queryFn: () => unwrap(api.projects({ project }).git.refs.get()),
+    enabled,
+  });
+}
+
 export type NewWorktree = { name: string; branch?: string; base?: string };
 
 /** Git worktrees of a project: one folder + branch per task. */
@@ -115,7 +133,7 @@ export function useWorktrees(project: string, enabled = true) {
 function useInvalidateWorktrees(project: string) {
   const qc = useQueryClient();
   return () => {
-    for (const key of ["worktrees", "projects", "git", "git-branches"]) qc.invalidateQueries({ queryKey: [key] });
+    for (const key of ["worktrees", "projects", "git", "git-branches", "git-refs"]) qc.invalidateQueries({ queryKey: [key] });
     qc.invalidateQueries({ queryKey: ["files", project] });
   };
 }
