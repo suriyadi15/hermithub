@@ -1,0 +1,27 @@
+sequenceDiagram
+    actor You
+    participant UI as Browser
+    participant S as Server
+    participant T as tmux
+    participant A as Agent CLI
+
+    You->>UI: New session (agent, permission mode)
+    UI->>S: POST /api/sessions
+    S->>T: new-session in the project folder
+    T->>A: launch claude / codex / gemini / bash
+    UI->>S: open WebSocket /ws/term/:name
+    S->>T: attach through a PTY
+    loop While the tab is open
+        You->>UI: type
+        UI->>S: keystrokes
+        S->>T: input
+        A-->>T: output
+        T-->>UI: terminal output (streamed)
+    end
+    You->>UI: close the tab
+    UI--xS: WebSocket closed
+    Note over T,A: The session keeps running on the server
+    UI->>S: dashboard polls status, CPU / RAM, last lines
+    You->>UI: open the session again
+    UI->>S: open WebSocket
+    S->>T: attach to the same session

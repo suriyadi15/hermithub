@@ -1,0 +1,33 @@
+flowchart TB
+    user["Browser / phone<br/>React UI · xterm.js · Monaco"]
+    caddy["Caddy (optional)<br/>HTTPS for --domain"]
+
+    subgraph container["Docker container"]
+        server["Project Hub server · Bun + Elysia · :8787<br/>password login + origin check"]
+        api["REST /api/*<br/>projects · files · git · search<br/>sessions · agents · settings"]
+        ws["WebSocket /ws/term/:name<br/>live terminal"]
+        tmux["tmux (private socket)<br/>one tmux session per agent session"]
+        agents["Claude Code · Codex CLI<br/>Gemini CLI · bash"]
+    end
+
+    subgraph data["./data on the host"]
+        projects[("projects/<br/>your code")]
+        home[("home/<br/>agents, logins,<br/>git & SSH config")]
+        db[("db/<br/>SQLite")]
+    end
+
+    cloud["AI providers · GitHub<br/>other git servers"]
+
+    user -- "HTTPS" --> caddy
+    caddy --> server
+    user -. "localhost / tunnel" .-> server
+    server --> api
+    server --> ws
+    api -- "start / stop / status" --> tmux
+    ws -- "attach (PTY)" --> tmux
+    tmux --> agents
+    api --> db
+    api --> projects
+    agents --> projects
+    agents --> home
+    agents --> cloud

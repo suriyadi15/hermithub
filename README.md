@@ -26,73 +26,11 @@ set up from the dashboard.
 Everything runs in one Docker container. The browser talks to a small Bun server, and every agent runs
 inside a tmux session on that server, so it keeps running when you close the tab.
 
-```mermaid
-flowchart LR
-    user["Browser / phone<br/>React UI · xterm.js · Monaco"]
-    caddy["Caddy (optional)<br/>HTTPS for --domain"]
-
-    subgraph container["Docker container"]
-        direction TB
-        server["Project Hub server · Bun + Elysia · :8787<br/>password login + origin check"]
-        api["REST /api/*<br/>projects · files · git · search<br/>sessions · agents · settings"]
-        ws["WebSocket /ws/term/:name<br/>live terminal"]
-        tmux["tmux (private socket)<br/>one tmux session per agent session"]
-        agents["Claude Code · Codex CLI<br/>Gemini CLI · bash"]
-        server --> api
-        server --> ws
-        api -- "start / stop / status" --> tmux
-        ws -- "attach (PTY)" --> tmux
-        tmux --> agents
-    end
-
-    subgraph data["./data on the host"]
-        projects[("projects/<br/>your code")]
-        home[("home/<br/>agents, logins,<br/>git & SSH config")]
-        db[("db/<br/>SQLite")]
-    end
-
-    cloud["AI providers · GitHub<br/>other git servers"]
-
-    user -- "HTTP + WebSocket" --> caddy --> server
-    user -. "or localhost / tunnel" .-> server
-    api --> projects
-    api --> db
-    agents --> projects
-    agents --> home
-    agents --> cloud
-```
+![Project Hub architecture](docs/diagrams/architecture.png)
 
 What happens when you start a session and come back later:
 
-```mermaid
-sequenceDiagram
-    actor You
-    participant UI as Browser
-    participant S as Server
-    participant T as tmux
-    participant A as Agent CLI
-
-    You->>UI: New session (agent, permission mode)
-    UI->>S: POST /api/sessions
-    S->>T: new-session in the project folder
-    T->>A: launch claude / codex / gemini / bash
-    UI->>S: open WebSocket /ws/term/:name
-    S->>T: attach through a PTY
-    loop While the tab is open
-        You->>UI: type
-        UI->>S: keystrokes
-        S->>T: input
-        A-->>T: output
-        T-->>UI: terminal output (streamed)
-    end
-    You->>UI: close the tab
-    UI--xS: WebSocket closed
-    Note over T,A: The session keeps running on the server
-    UI->>S: dashboard polls status, CPU / RAM, last lines
-    You->>UI: open the session again
-    UI->>S: open WebSocket
-    S->>T: attach to the same session
-```
+![Life of an agent session](docs/diagrams/session-flow.png)
 
 - **Nothing on the host but Docker.** Agents, logins and settings live in `./data`, so backing up that
   folder backs up everything.
@@ -100,7 +38,8 @@ sequenceDiagram
   Restarting the container does, but you can pick up conversations again with **Resume**.
 - **Every API and terminal request** needs a logged-in session and must come from an allowed origin.
 
-The source layout is described in [docs/development.md](docs/development.md).
+The diagram sources are in [docs/diagrams](docs/diagrams) (Mermaid), and the source layout is described in
+[docs/development.md](docs/development.md).
 
 ## Quick start
 
