@@ -54,6 +54,12 @@ Forgot the password:
 docker compose exec -u hub project-hub bun run set-password
 ```
 
+Lost the phone with your authenticator app and have no recovery codes left:
+
+```bash
+docker compose exec -u hub project-hub bun run disable-2fa
+```
+
 ## Manual install
 
 ```bash

@@ -14,6 +14,9 @@ like an SSH key.
   attempts an IP is locked out for 15 minutes, and after 30 failures from any IPs all logins pause for 15
   minutes. Client IPs come from proxy headers only when `TRUST_PROXY` is set. Session tokens are stored
   hashed. Changing the password signs out every device.
+- **Two-factor authentication (optional).** Turn it on in **Settings → Two-factor authentication** to also ask
+  for a code from an authenticator app (TOTP). Each code works once, wrong codes count toward the lockout,
+  and ten single-use recovery codes are shown once when you turn it on. Turning it on signs out other devices.
 - **Security headers**: no framing (`frame-ancestors 'none'`), `nosniff`, `no-referrer`; downloads are
   always served as attachments.
 - **Same-origin checks** on every non-GET request and every WebSocket.
@@ -26,13 +29,21 @@ like an SSH key.
 
 - Serve it over HTTPS only, and add a second factor in front: Cloudflare Access, a VPN (Tailscale, WireGuard)
   or your proxy's auth.
-- Use a long, unique password.
+- Use a long, unique password and turn on two-factor authentication.
 - Prefer permission modes that ask before running commands. "Bypass" / "YOLO" modes let an agent do anything
   the container user can do, including pushing with your GitHub login.
 - Give GitHub tokens only the scopes you need; fine-grained tokens limited to some repositories work too.
-- API keys are stored in plain text in `data/db/hub.db` and visible to processes in the container. Keep the
+- API keys and the two-factor secret are stored in plain text in `data/db/hub.db` and visible to processes in the container. Keep the
   data folder private (`chmod 700`) and out of shared backups.
 - Set `mem_limit` so a runaway process cannot take down the host.
+
+## Lost your authenticator?
+
+Log in with a recovery code. If you have none left, turn two-factor authentication off from the server:
+
+```bash
+docker compose exec -u hub project-hub bun run disable-2fa
+```
 
 ## Reporting vulnerabilities
 

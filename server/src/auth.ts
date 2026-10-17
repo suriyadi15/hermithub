@@ -2,8 +2,15 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Elysia, status, t } from "elysia";
-import { db, getSetting, logActivity, setSetting } from "./db";
+import { db, deleteSetting, getSetting, logActivity, setSetting } from "./db";
 import { DATA_DIR } from "./paths";
+import {
+  generateRecoveryCodes,
+  generateSecret,
+  normalizeRecoveryCode,
+  otpauthUri,
+  verifyTotp,
+} from "./totp";
 
 export const COOKIE = "hub_session";
 const SESSION_TTL = 30 * 24 * 3600 * 1000;
@@ -55,6 +62,51 @@ export async function setPassword(plain: string) {
   if (plain.length < 8) throw new Error("Password must be at least 8 characters");
   setSetting("password_hash", await Bun.password.hash(plain));
   db.query("DELETE FROM auth_sessions").run();
+}
+
+export function totpEnabled() {
+  return !!getSetting("totp_secret");
+}
+
+export function disableTotp() {
+  for (const key of ["totp_secret", "totp_pending_secret", "totp_last_step", "totp_recovery"]) deleteSetting(key);
+}
+
+function newRecoveryCodes() {
+  const codes = generateRecoveryCodes();
+  setSetting("totp_recovery", JSON.stringify(codes.map((c) => hashToken(normalizeRecoveryCode(c)))));
+  return codes;
+}
+
+/**
+ * Check a second-factor code: a current authenticator code (never the same one twice) or an unused
+ * recovery code, which is then spent.
+ */
+export function checkSecondFactor(code: string, now = Date.now()): "totp" | "recovery" | null {
+  const secret = getSetting("totp_secret");
+  if (!secret) return null;
+  const step = verifyTotp(secret, code, now, Number(getSetting("totp_last_step") ?? -1));
+  if (step !== null) {
+    setSetting("totp_last_step", String(step));
+    return "totp";
+  }
+  const normalized = normalizeRecoveryCode(code);
+  if (!normalized) return null;
+  const hashes: string[] = JSON.parse(getSetting("totp_recovery") ?? "[]");
+  const i = hashes.indexOf(hashToken(normalized));
+  if (i < 0) return null;
+  hashes.splice(i, 1);
+  setSetting("totp_recovery", JSON.stringify(hashes));
+  return "recovery";
+}
+
+function recoveryLeft() {
+  return (JSON.parse(getSetting("totp_recovery") ?? "[]") as string[]).length;
+}
+
+async function passwordOk(plain: string) {
+  const hash = getSetting("password_hash");
+  return !!hash && (await Bun.password.verify(plain, hash));
 }
 
 export function parseCookies(header: string | null): Record<string, string> {
@@ -195,12 +247,23 @@ export const authRoutes = new Elysia({ prefix: "/api/auth" })
         logActivity("login_failed", ip);
         return status(401, { error: "Wrong password" });
       }
+      if (totpEnabled()) {
+        const code = body.code?.trim();
+        if (!code) return status(401, { error: "Enter the code from your authenticator app", totp: true });
+        const factor = checkSecondFactor(code);
+        if (!factor) {
+          recordFail(ip);
+          logActivity("login_failed_totp", ip);
+          return status(401, { error: "Wrong authentication code", totp: true });
+        }
+        if (factor === "recovery") logActivity("recovery_code_used", ip);
+      }
       fails.delete(ip);
       logActivity("login", ip);
       set.headers["set-cookie"] = startLogin(request);
       return { ok: true };
     },
-    { body: t.Object({ password: t.String({ maxLength: 512 }) }) },
+    { body: t.Object({ password: t.String({ maxLength: 512 }), code: t.Optional(t.String({ maxLength: 32 })) }) },
   )
   .post("/logout", ({ request, set }) => {
     const token = parseCookies(request.headers.get("cookie"))[COOKIE];
@@ -208,7 +271,15 @@ export const authRoutes = new Elysia({ prefix: "/api/auth" })
     set.headers["set-cookie"] = cookieHeader(request, "", 0);
     return { ok: true };
   })
-  .get("/me", ({ request }) => ({ authed: isAuthed(request), needsSetup: needsSetup() }))
+  .get("/me", ({ request }) => {
+    const authed = isAuthed(request);
+    return {
+      authed,
+      needsSetup: needsSetup(),
+      totpEnabled: authed ? totpEnabled() : undefined,
+      recoveryLeft: authed && totpEnabled() ? recoveryLeft() : undefined,
+    };
+  })
   .post(
     "/setup",
     async ({ body, request, server, set }) => {
@@ -251,4 +322,60 @@ export const authRoutes = new Elysia({ prefix: "/api/auth" })
       return { ok: true };
     },
     { body: t.Object({ current: t.String({ maxLength: 512 }), next: t.String({ maxLength: 512 }) }) },
+  )
+  .post(
+    "/totp/setup",
+    async ({ body, request }) => {
+      if (!isAuthed(request)) return status(401, { error: "Unauthorized" });
+      if (totpEnabled()) return status(409, { error: "Two-factor authentication is already on" });
+      if (!(await passwordOk(body.password))) return status(400, { error: "Password is wrong" });
+      const secret = generateSecret();
+      setSetting("totp_pending_secret", secret);
+      return { secret, uri: otpauthUri(secret) };
+    },
+    { body: t.Object({ password: t.String({ maxLength: 512 }) }) },
+  )
+  .post(
+    "/totp/enable",
+    ({ body, request }) => {
+      if (!isAuthed(request)) return status(401, { error: "Unauthorized" });
+      const secret = getSetting("totp_pending_secret");
+      if (!secret) return status(400, { error: "Start the setup again" });
+      const step = verifyTotp(secret, body.code);
+      if (step === null) return status(400, { error: "Wrong code. Check the time on your phone and try again." });
+      setSetting("totp_secret", secret);
+      setSetting("totp_last_step", String(step));
+      deleteSetting("totp_pending_secret");
+      const codes = newRecoveryCodes();
+      // Other devices logged in with the password alone; sign them out.
+      const token = parseCookies(request.headers.get("cookie"))[COOKIE]!;
+      db.query("DELETE FROM auth_sessions WHERE token != ?").run(hashToken(token));
+      logActivity("totp_enabled");
+      return { recoveryCodes: codes };
+    },
+    { body: t.Object({ code: t.String({ maxLength: 32 }) }) },
+  )
+  .post(
+    "/totp/disable",
+    async ({ body, request }) => {
+      if (!isAuthed(request)) return status(401, { error: "Unauthorized" });
+      if (!(await passwordOk(body.password))) return status(400, { error: "Password is wrong" });
+      if (!checkSecondFactor(body.code)) return status(400, { error: "Wrong authentication code" });
+      disableTotp();
+      logActivity("totp_disabled");
+      return { ok: true };
+    },
+    { body: t.Object({ password: t.String({ maxLength: 512 }), code: t.String({ maxLength: 32 }) }) },
+  )
+  .post(
+    "/totp/recovery",
+    async ({ body, request }) => {
+      if (!isAuthed(request)) return status(401, { error: "Unauthorized" });
+      if (!totpEnabled()) return status(400, { error: "Two-factor authentication is off" });
+      if (!(await passwordOk(body.password))) return status(400, { error: "Password is wrong" });
+      if (!checkSecondFactor(body.code)) return status(400, { error: "Wrong authentication code" });
+      logActivity("totp_recovery_regenerated");
+      return { recoveryCodes: newRecoveryCodes() };
+    },
+    { body: t.Object({ password: t.String({ maxLength: 512 }), code: t.String({ maxLength: 32 }) }) },
   );

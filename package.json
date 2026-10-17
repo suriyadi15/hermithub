@@ -11,6 +11,7 @@
     "start": "bun server/src/index.ts",
     "test": "bun test server",
     "typecheck": "bun run --cwd web tsc -p ../server --noEmit && bun run --cwd web tsc -p . --noEmit",
-    "set-password": "bun server/scripts/set-password.ts"
+    "set-password": "bun server/scripts/set-password.ts",
+    "disable-2fa": "bun server/scripts/disable-2fa.ts"
   }
 }

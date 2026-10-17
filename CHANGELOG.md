@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 — 2026-10-17
+
+- **Two-factor authentication (TOTP).** Optional second login step with a code from an authenticator app
+  (Google Authenticator, 1Password, Aegis…), turned on in **Settings → Two-factor authentication** with a QR
+  code. Codes cannot be reused, wrong codes count toward the login lockout, and ten single-use recovery
+  codes are shown once. Turning it on signs out other devices.
+- `bun run disable-2fa` turns it off from the server if the authenticator and recovery codes are lost.
+
 ## 0.1.1 — 2026-10-17
 
 Security:

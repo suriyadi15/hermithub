@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/dialogs";
 import { AgentsSection } from "@/components/settings/AgentsSection";
 import { GitHubSection, GitIdentitySection, SshKeySection } from "@/components/settings/GitSections";
+import { TwoFactorSection } from "@/components/settings/TwoFactorSection";
 import { TaskSheet } from "@/components/TaskSheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,6 +108,10 @@ export default function Settings() {
             Change password
           </Button>
         </form>
+      </Section>
+
+      <Section title="Two-factor authentication" description="Ask for a code from an authenticator app after the password.">
+        <TwoFactorSection />
       </Section>
 
       <Section title="Trash" description="Projects deleted from the dashboard.">

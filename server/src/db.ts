@@ -48,6 +48,10 @@ export function setSetting(key: string, value: string) {
   );
 }
 
+export function deleteSetting(key: string) {
+  db.query("DELETE FROM settings WHERE key = ?").run(key);
+}
+
 export function logActivity(action: string, detail?: string) {
   db.query("INSERT INTO activity (ts, action, detail) VALUES (?, ?, ?)").run(Date.now(), action, detail ?? null);
   db.query("DELETE FROM activity WHERE id <= (SELECT MAX(id) - 1000 FROM activity)").run();

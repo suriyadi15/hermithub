@@ -121,6 +121,7 @@ Run from the install folder.
 | Update | `docker compose pull && docker compose up -d` (or re-run the installer). Warn: this stops running sessions; conversations can be resumed. Source installs: `git pull && docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build` |
 | Logs | `docker compose logs -f project-hub` |
 | Lost setup link | `cat data/db/setup-token` or `docker compose logs project-hub \| grep setup` |
+| Lost authenticator (2FA) and recovery codes | `docker compose exec -u hub project-hub bun run disable-2fa` (the user should run it) |
 | Forgot password | `docker compose exec -u hub project-hub bun run set-password` (interactive; the user should run it, or pass the new password as an argument only if they asked you to) |
 | Shell in the container | `docker compose exec -u hub project-hub bash -l` — always `-u hub`, never as root |
 | Change port / domain | edit `.env` (`HUB_PORT`, `COMPOSE_PROFILES=https`, `HUB_DOMAIN`, `PUBLIC_ORIGIN=https://<domain>`), then `docker compose up -d` |
