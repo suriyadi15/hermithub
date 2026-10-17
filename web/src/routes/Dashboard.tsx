@@ -67,7 +67,7 @@ export default function Dashboard() {
           <div className="min-w-0 flex-1">
             <h2 className="font-semibold">Get started</h2>
             <p className="text-sm text-muted-foreground">
-              Install an AI agent (Claude Code, Codex, Gemini CLI) and connect GitHub. Everything runs inside the container.
+              Install an AI agent (Claude Code, Codex, Gemini CLI, OpenCode, Copilot…) and connect GitHub. Everything runs inside the container.
             </p>
           </div>
           <Button asChild>

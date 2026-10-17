@@ -1,4 +1,4 @@
-import { Bot, Radio, Sparkles, SquareTerminal, type LucideIcon } from "lucide-react";
+import { Bot, Braces, Cat, Code, Gem, Radio, Sparkles, SquareTerminal, type LucideIcon } from "lucide-react";
 import type { Agent, SessionMode } from "./api";
 import { useAgents } from "./queries";
 
@@ -17,6 +17,10 @@ const AGENT_STYLE: Record<string, { icon: LucideIcon; className: string }> = {
   claude: { icon: Bot, className: "text-primary border-primary/40 bg-primary/10" },
   codex: { icon: Sparkles, className: "text-success border-success/40 bg-success/10" },
   gemini: { icon: Sparkles, className: "text-warning border-warning/40 bg-warning/10" },
+  opencode: { icon: Code, className: "text-foreground border-border bg-muted/60" },
+  copilot: { icon: Braces, className: "text-sky-500 border-sky-500/40 bg-sky-500/10" },
+  qwen: { icon: Gem, className: "text-violet-500 border-violet-500/40 bg-violet-500/10" },
+  crush: { icon: Cat, className: "text-primary border-primary/40 bg-primary/10" },
 };
 
 const BASH: Omit<ModeInfo, "agent"> = {

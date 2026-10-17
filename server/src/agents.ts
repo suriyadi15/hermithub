@@ -1,4 +1,4 @@
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { Elysia, t } from "elysia";
@@ -29,6 +29,8 @@ export interface AgentDef {
     | { kind: "script"; install: string; update: string; uninstall: string };
   /** Files (relative to $HOME) whose presence means the agent is logged in. */
   authFiles: string[];
+  /** Overrides the authFiles check, for agents whose credentials share a file with other settings. */
+  loggedIn?(): boolean;
   /** Optional API key alternative to an interactive login. Injected into the agent's sessions as `env`. */
   apiKey?: { env: string; label: string; url: string };
   /** Interactive login, run in a web terminal. */
@@ -57,6 +59,23 @@ const geminiModes: [string, string][] = [
   ["plan", "Plan — read and plan only, no changes"],
   ["yolo", "YOLO — run everything without asking (risky)"],
 ];
+
+const qwenModes: [string, string][] = [
+  ["default", "Default — ask before file edits and commands"],
+  ["auto-edit", "Auto edit — edit files freely, still ask for commands"],
+  ["plan", "Plan — read and plan only, no changes"],
+  ["auto", "Auto — a classifier approves safe actions"],
+  ["yolo", "YOLO — run everything without asking (risky)"],
+];
+
+/** Parsed JSON file under $HOME, or null when missing or invalid. */
+function readHomeJson(path: string): any {
+  try {
+    return JSON.parse(readFileSync(join(HOME, path), "utf8"));
+  } catch {
+    return null;
+  }
+}
 
 async function mergeJson(path: string, patch: (cur: any) => any) {
   let cur: any = {};
@@ -149,6 +168,102 @@ export const AGENTS: AgentDef[] = [
       });
     },
   },
+  {
+    id: "opencode",
+    name: "OpenCode",
+    vendor: "Anomaly",
+    homepage: "https://opencode.ai/docs",
+    bin: "opencode",
+    install: { kind: "npm", pkg: "opencode-ai" },
+    authFiles: [".local/share/opencode/auth.json"],
+    login: {
+      command: "opencode auth login",
+      hint: "Pick a provider (Anthropic, OpenAI, GitHub Copilot, OpenRouter, …), then open the link or paste its API key.",
+    },
+    logout: "opencode auth logout",
+    permissionModes: [
+      { id: "default", label: "Default — build agent, asks as its permission config says", args: [] },
+      { id: "plan", label: "Plan — plan agent, read and plan only", args: ["--agent", "plan"] },
+      { id: "auto", label: "Auto — approve everything not explicitly denied (risky)", args: ["--auto"] },
+    ],
+    launch: ({ resume, permissionArgs }) => ["opencode", ...(resume ? ["--continue"] : []), ...permissionArgs],
+  },
+  {
+    id: "copilot",
+    name: "GitHub Copilot CLI",
+    vendor: "GitHub",
+    homepage: "https://docs.github.com/copilot/how-tos/copilot-cli",
+    bin: "copilot",
+    install: { kind: "npm", pkg: "@github/copilot" },
+    authFiles: [".copilot/config.json"],
+    // config.json is created on first run too; without a keyring the token is stored in it.
+    loggedIn: () => {
+      const users = readHomeJson(".copilot/config.json")?.loggedInUsers;
+      return Array.isArray(users) && users.length > 0;
+    },
+    apiKey: {
+      env: "COPILOT_GITHUB_TOKEN",
+      label: "GitHub token (fine-grained, Copilot Requests)",
+      url: "https://github.com/settings/personal-access-tokens/new",
+    },
+    login: {
+      command: "copilot login --device-code",
+      hint: "Open the link and enter the one-time code. Allow storing the token in plain text when asked (no keyring in the container).",
+    },
+    logout: 'echo "Type /logout, then /exit."; copilot',
+    permissionModes: [
+      { id: "default", label: "Default — ask before each tool, path and URL", args: [] },
+      { id: "plan", label: "Plan — plan first, no changes until approved", args: ["--plan"] },
+      { id: "autopilot", label: "Autopilot — keep going until done, still asks for tools", args: ["--autopilot"] },
+      { id: "yolo", label: "YOLO — allow all tools, paths and URLs (risky)", args: ["--yolo"] },
+    ],
+    launch: ({ resume, permissionArgs }) => ["copilot", ...(resume ? ["--continue"] : []), ...permissionArgs],
+  },
+  {
+    id: "qwen",
+    name: "Qwen Code",
+    vendor: "Alibaba Qwen",
+    homepage: "https://github.com/QwenLM/qwen-code",
+    bin: "qwen",
+    install: { kind: "npm", pkg: "@qwen-code/qwen-code" },
+    authFiles: [".qwen/oauth_creds.json"],
+    // API-key providers chosen with /auth are saved in settings.json instead.
+    loggedIn: () =>
+      existsSync(join(HOME, ".qwen/oauth_creds.json")) || !!readHomeJson(".qwen/settings.json")?.security?.auth?.selectedType,
+    login: {
+      command: "qwen",
+      hint: "Type /auth, choose Qwen OAuth (open the link) or an API provider, then type /quit.",
+      env: { NO_BROWSER: "true" },
+    },
+    logout: "rm -f ~/.qwen/oauth_creds.json",
+    permissionModes: qwenModes.map(([id, label]) => ({ id, label, args: ["--approval-mode", id] })),
+    launch: ({ resume, permissionArgs }) => ["qwen", ...(resume ? ["--continue"] : []), ...permissionArgs],
+    env: { NO_BROWSER: "true" },
+  },
+  {
+    id: "crush",
+    name: "Crush",
+    vendor: "Charm",
+    homepage: "https://github.com/charmbracelet/crush",
+    bin: "crush",
+    install: { kind: "npm", pkg: "@charmland/crush" },
+    authFiles: [".local/share/crush/crush.json"],
+    // Logins and API keys entered in Crush are saved per provider in its data config, next to other state.
+    loggedIn: () => {
+      const providers = readHomeJson(".local/share/crush/crush.json")?.providers ?? {};
+      return Object.values<any>(providers).some((p) => p?.api_key || p?.oauth);
+    },
+    login: {
+      command: 'read -rp "Platform (hyper, copilot, openai, grok) [hyper]: " p; crush login "${p:-hyper}"',
+      hint: "Choose a platform, then open the link and enter the code. Other providers take an API key on first launch.",
+    },
+    logout: 'read -rp "Platform (hyper, copilot, openai, grok) [hyper]: " p; crush logout "${p:-hyper}"',
+    permissionModes: [
+      { id: "default", label: "Default — ask before each tool call", args: [] },
+      { id: "yolo", label: "YOLO — accept all permissions (risky)", args: ["--yolo"] },
+    ],
+    launch: ({ resume, permissionArgs }) => ["crush", ...(resume ? ["--continue"] : []), ...permissionArgs],
+  },
 ];
 
 export const AGENT_IDS = AGENTS.map((a) => a.id);
@@ -179,12 +294,13 @@ export async function agentVersion(a: AgentDef): Promise<string | null> {
   const hit = versionCache.get(path);
   if (hit && hit.mtime === mtime) return hit.version;
   const r = await exec([path, "--version"], { timeoutMs: 10_000 });
-  const version = r.code === 0 ? (r.stdout.trim().match(/\d+\.\d+[\w.\-+]*/)?.[0] ?? (r.stdout.trim() || null)) : null;
+  const version = r.code === 0 ? (r.stdout.trim().match(/\d+\.\d+[\w.\-+]*/)?.[0]?.replace(/\.$/, "") ?? (r.stdout.trim() || null)) : null;
   versionCache.set(path, { mtime, version });
   return version;
 }
 
 export function hasLogin(a: AgentDef) {
+  if (a.loggedIn) return a.loggedIn();
   return a.authFiles.some((f) => existsSync(join(HOME, f)));
 }
 

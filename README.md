@@ -1,7 +1,7 @@
 # Project Hub
 
 A self-hosted web dashboard for your code projects and AI coding agents — **Claude Code**, **Codex CLI**,
-**Gemini CLI** and more — running in a single Docker container. Open it from any browser (phone included),
+**Gemini CLI**, **OpenCode**, **GitHub Copilot CLI** and more — running in a single Docker container. Open it from any browser (phone included),
 start agent sessions in your projects, and close the tab: sessions keep running on the server.
 
 Nothing but Docker is installed on the host. Agents, their logins, GitHub access and git settings are all
@@ -11,7 +11,8 @@ set up from the dashboard.
 
 - **Projects**: create (empty folder, `git init` or `git clone`), rename, move to trash, restore.
 - **Agent sessions**, several at once per project, in a web terminal (tmux under the hood):
-  - Claude Code, Codex CLI, Gemini CLI — pick a permission mode per session, continue the last conversation.
+  - Claude Code, Codex CLI, Gemini CLI, OpenCode, GitHub Copilot CLI, Qwen Code, Crush — pick a permission
+    mode per session, continue the last conversation.
   - **Claude Remote Control**: drive a session from claude.ai/code or the Claude mobile app.
   - Plain **bash** terminal in the project folder.
 - **Settings in the browser**: install / update / log in to each agent, or paste an API key; log in to

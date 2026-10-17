@@ -29,6 +29,8 @@ Guidelines:
 - **Login must work without a local browser.** Prefer device-code flows or "paste the code" flows. The
   task terminal shows the last URL and `XXXX-XXXX` style code it prints as buttons.
 - **Keep state in `$HOME`** so it persists in the home volume.
+- Optional `loggedIn()` replaces the `authFiles` check when credentials share a file with other state
+  (Copilot, Crush).
 - Optional `env` adds variables to every session of the agent; optional `onApiKey(key)` runs when the key
   changes (e.g. to tell the CLI to use it).
 - Add a `buildCommand` case to `server/test/parsers.test.ts` and an icon/color in `web/src/lib/modes.ts`

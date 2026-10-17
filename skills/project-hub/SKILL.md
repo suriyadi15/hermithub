@@ -1,6 +1,6 @@
 ---
 name: project-hub
-description: Install, update, configure, troubleshoot or uninstall Project Hub — the self-hosted web dashboard that runs AI coding agents (Claude Code, Codex CLI, Gemini CLI) in one Docker container. Use when the user says things like "install Project Hub", "set up project-hub on my server/VPS", "deploy the agent dashboard with my domain", "update Project Hub", "Project Hub won't start", "I lost the setup link", "reset the Project Hub password", or "remove Project Hub".
+description: Install, update, configure, troubleshoot or uninstall Project Hub — the self-hosted web dashboard that runs AI coding agents (Claude Code, Codex CLI, Gemini CLI, OpenCode, Copilot CLI, Qwen Code, Crush) in one Docker container. Use when the user says things like "install Project Hub", "set up project-hub on my server/VPS", "deploy the agent dashboard with my domain", "update Project Hub", "Project Hub won't start", "I lost the setup link", "reset the Project Hub password", or "remove Project Hub".
 ---
 
 # Project Hub — install & operate
@@ -105,7 +105,7 @@ Tell the user:
 1. The setup link: `http://localhost:8787/setup?token=<token>` (or `https://<domain>/setup?token=…`).
    From another computer without a domain: `ssh -L 8787:localhost:8787 <user>@<server>` first, then open
    the localhost link.
-2. Next steps in the dashboard: **Settings → AI agents → Install** (Claude Code / Codex / Gemini) →
+2. Next steps in the dashboard: **Settings → AI agents → Install** (Claude Code / Codex / Gemini / OpenCode / Copilot / Qwen / Crush) →
    **Log in** (or paste an API key) → **Settings → GitHub → Log in with GitHub** → set **Git identity**.
 3. Data lives in `<install dir>/data`; back that folder up.
 

@@ -7,6 +7,10 @@ Project Hub runs AI coding agents as interactive terminal programs in your proje
 | Claude Code (Anthropic) | official native installer | `claude auth login` (Claude subscription or Console) | `ANTHROPIC_API_KEY` |
 | Codex CLI (OpenAI) | `npm i -g @openai/codex` | `codex login --device-auth` (ChatGPT account) | `OPENAI_API_KEY` |
 | Gemini CLI (Google) | `npm i -g @google/gemini-cli` | Google login inside `gemini` | `GEMINI_API_KEY` |
+| OpenCode (Anomaly) | `npm i -g opencode-ai` | `opencode auth login` (Anthropic, OpenAI, Copilot, OpenRouter, … or a provider key) | — |
+| GitHub Copilot CLI (GitHub) | `npm i -g @github/copilot` | `copilot login --device-code` (Copilot subscription) | `COPILOT_GITHUB_TOKEN` |
+| Qwen Code (Alibaba Qwen) | `npm i -g @qwen-code/qwen-code` | `/auth` inside `qwen` (Qwen OAuth or an API provider) | — |
+| Crush (Charm) | `npm i -g @charmland/crush` | `crush login hyper\|copilot\|openai\|grok`, or a provider key on first launch | — |
 
 Want another one? See [adding-an-agent.md](adding-an-agent.md).
 
@@ -25,13 +29,20 @@ shown as buttons above the terminal:
 - **Codex CLI**: open the link and enter the one-time code (device login). Device login must be allowed
   in your ChatGPT security settings.
 - **Gemini CLI**: choose *Login with Google*, open the link, paste the authorization code back, then `/quit`.
+- **OpenCode**: pick a provider; subscription providers print a link to open, others ask for their API key.
+- **GitHub Copilot CLI**: open the link and enter the one-time code. There is no keyring in the container,
+  so answer *yes* when it asks to store the token in plain text (`~/.copilot/config.json`).
+- **Qwen Code**: type `/auth`, choose Qwen OAuth (open the link) or an API provider, then `/quit`.
+- **Crush**: type the platform (`hyper`, `copilot`, `openai` or `grok`) and follow the link. Other providers
+  (Anthropic, OpenRouter, …) ask for an API key the first time you start Crush.
 
 You can also skip this and sign in the first time you start a session.
 
 ### API keys instead
 
 Paste a key into the agent's **API key** field. It is stored in the dashboard database and passed to that
-agent's sessions as an environment variable. For Codex it is stored with `codex login --with-api-key`; for
+agent's sessions as an environment variable (Copilot takes a fine-grained GitHub token with the *Copilot
+Requests* permission). For Codex it is stored with `codex login --with-api-key`; for
 Gemini the CLI is switched to API-key auth.
 
 ## Sessions
@@ -47,8 +58,13 @@ From a project, start a session and choose:
 | Claude Code | `default`, `acceptEdits`, `plan`, `auto`, `dontAsk`, `bypassPermissions` |
 | Codex CLI | default, `read-only`, `workspace-write` sandbox, `yolo` (`--dangerously-bypass-approvals-and-sandbox`) |
 | Gemini CLI | `default`, `auto_edit`, `plan`, `yolo` |
+| OpenCode | default (build agent), `plan` (`--agent plan`), `auto` (`--auto`) |
+| GitHub Copilot CLI | default, `plan`, `autopilot`, `yolo` |
+| Qwen Code | `default`, `auto-edit`, `plan`, `auto`, `yolo` |
+| Crush | default, `yolo` |
 
-- **Continue the last conversation** — Claude `--continue`, Codex `resume --last`, Gemini `--resume latest`.
+- **Continue the last conversation** — Claude `--continue`, Codex `resume --last`, Gemini `--resume latest`;
+  OpenCode, Copilot, Qwen Code and Crush `--continue`.
 
 Sessions live in tmux inside the container: closing the browser does not stop them, and several devices
 can watch the same session. Restarting a session continues its conversation. Recreating the container

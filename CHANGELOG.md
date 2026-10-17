@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0 — 2026-10-17
+
+- New agents: **OpenCode**, **GitHub Copilot CLI**, **Qwen Code** and **Crush** — installed, updated and
+  logged in from Settings like the others, each with its own permission modes and "continue last conversation".
+
 ## 0.2.0 — 2026-10-17
 
 - **Two-factor authentication (TOTP).** Optional second login step with a code from an authenticator app

@@ -87,6 +87,11 @@ describe("sessions", () => {
     expect(buildCommand("gemini", { resume: true, permission: "auto_edit" })).toEqual([
       "gemini", "--resume", "latest", "--approval-mode", "auto_edit",
     ]);
+    expect(buildCommand("opencode", { resume: true, permission: "plan" })).toEqual(["opencode", "--continue", "--agent", "plan"]);
+    expect(buildCommand("opencode", { permission: "default" })).toEqual(["opencode"]);
+    expect(buildCommand("copilot", { resume: true, permission: "yolo" })).toEqual(["copilot", "--continue", "--yolo"]);
+    expect(buildCommand("qwen", { permission: "auto-edit" })).toEqual(["qwen", "--approval-mode", "auto-edit"]);
+    expect(buildCommand("crush", { resume: true, permission: "yolo" })).toEqual(["crush", "--continue", "--yolo"]);
     expect(() => buildCommand("nope", {})).toThrow();
   });
   test("treeUsage sums a process subtree", () => {

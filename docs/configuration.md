@@ -24,7 +24,7 @@ Apply changes with `docker compose up -d`.
 
 | Path in the container | Host (default) | Contents |
 |---|---|---|
-| `/home/hub` | `data/home` | Agents (`~/.local`), their logins (`~/.claude`, `~/.codex`, `~/.gemini`), `~/.config/gh`, `~/.gitconfig`, `~/.ssh` |
+| `/home/hub` | `data/home` | Agents (`~/.local`), their logins (`~/.claude`, `~/.codex`, `~/.gemini`, `~/.copilot`, `~/.qwen`, `~/.local/share/opencode`, `~/.local/share/crush`), `~/.config/gh`, `~/.gitconfig`, `~/.ssh` |
 | `/home/hub/projects` | `data/projects` | Projects |
 | `/data` | `data/db` | SQLite database |
 
