@@ -122,6 +122,17 @@ export interface Branch {
 }
 
 export const BRANCH_FORMAT = "%(refname)%1f%(refname:short)%1f%(HEAD)%1f%(upstream:short)%1f%(upstream:track)%1f%(committerdate:unix)%1f%(contents:subject)";
+export const TAG_FORMAT = "%(refname:short)%1f%(creatordate:unix)%1f%(contents:subject)";
+
+export function parseTags(out: string) {
+  return out
+    .split("\n")
+    .filter(Boolean)
+    .map((l) => {
+      const [name, date, subject] = l.split("\x1f");
+      return { name: name!, date: Number(date) * 1000, subject: subject ?? "" };
+    });
+}
 
 export function parseBranches(out: string): Branch[] {
   return out
@@ -230,6 +241,29 @@ export const gitRoutes = new Elysia({ prefix: "/api/projects/:project/git" })
     const dir = projectDir(params.project);
     const r = await git(dir, "for-each-ref", "--sort=-committerdate", `--format=${BRANCH_FORMAT}`, "refs/heads", "refs/remotes");
     return r.code === 0 ? parseBranches(r.stdout) : [];
+  })
+  // Everything a new worktree can start from: branches, tags and recent commits.
+  .get("/refs", async ({ params }) => {
+    const dir = projectDir(params.project);
+    const [branches, tags, log] = await Promise.all([
+      git(dir, "for-each-ref", "--sort=-committerdate", `--format=${BRANCH_FORMAT}`, "refs/heads", "refs/remotes"),
+      git(dir, "for-each-ref", "--sort=-creatordate", `--format=${TAG_FORMAT}`, "refs/tags"),
+      git(dir, "log", "--all", "-200", "--format=%h%x1f%s%x1f%ct"),
+    ]);
+    return {
+      branches: branches.code === 0 ? parseBranches(branches.stdout) : [],
+      tags: tags.code === 0 ? parseTags(tags.stdout) : [],
+      commits:
+        log.code === 0
+          ? log.stdout
+              .split("\n")
+              .filter(Boolean)
+              .map((l) => {
+                const [hash, subject, date] = l.split("\x1f");
+                return { hash: hash!, subject: subject ?? "", date: Number(date) * 1000 };
+              })
+          : [],
+    };
   })
   .post(
     "/stage",

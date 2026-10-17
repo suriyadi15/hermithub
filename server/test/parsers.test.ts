@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseBranches, parseStatus } from "../src/git";
+import { parseBranches, parseStatus, parseTags } from "../src/git";
 import { fuzzyScore, parseRgJson } from "../src/search";
 import { repoName } from "../src/projects";
 import { buildCommand, treeUsage } from "../src/sessions";
@@ -62,6 +62,13 @@ describe("git", () => {
     expect(b).toHaveLength(2);
     expect(b[0]).toMatchObject({ name: "main", current: true, remote: false, upstream: "origin/main", ahead: 1, date: 1700000000000 });
     expect(b[1]).toMatchObject({ name: "origin/main", remote: true, current: false, upstream: null });
+  });
+  test("parseTags", () => {
+    const out = ["v1.0\x1f1700000000\x1frelease", "light\x1f1700000001\x1f"].join("\n") + "\n";
+    expect(parseTags(out)).toEqual([
+      { name: "v1.0", date: 1700000000000, subject: "release" },
+      { name: "light", date: 1700000001000, subject: "" },
+    ]);
   });
   test("repoName", () => {
     expect(repoName("https://github.com/a/b.git")).toBe("b");

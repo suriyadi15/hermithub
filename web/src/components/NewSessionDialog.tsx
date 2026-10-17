@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { RefCombobox } from "@/components/RefCombobox";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -209,12 +210,13 @@ export function NewSessionDialog(props: {
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="wt-base">From</Label>
-                  <Input
+                  <RefCombobox
                     id="wt-base"
-                    placeholder={repo.main?.branch ?? "HEAD"}
+                    project={props.project}
+                    enabled={props.open && isNew}
                     value={base}
-                    maxLength={100}
-                    onChange={(e) => setBase(e.target.value)}
+                    onChange={setBase}
+                    defaultLabel={repo.main?.branch ?? "HEAD"}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground sm:col-span-2">
