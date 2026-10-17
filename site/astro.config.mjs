@@ -6,7 +6,7 @@ import starlightLinksValidator from "starlight-links-validator";
 const repo = "https://github.com/suriyadi15/project-hub";
 
 export default defineConfig({
-  site: "https://project-hub.pages.dev",
+  site: "https://projecthubapp.pages.dev",
   integrations: [
     starlight({
       title: "Project Hub",

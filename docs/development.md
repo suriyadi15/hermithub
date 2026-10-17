@@ -84,7 +84,7 @@ operating commands change, update it (and `references/troubleshooting.md`), then
 ## Website
 
 `site/` is the website (landing page and docs), built with Astro Starlight and deployed to Cloudflare Pages at
-https://project-hub.pages.dev. The docs pages are generated from `docs/*.md` on every build
+https://projecthubapp.pages.dev. The docs pages are generated from `docs/*.md` on every build
 (`site/scripts/sync-docs.ts`), so edit the files in `docs/`, not the generated copies. Links between docs files
 (`installation.md`) become site links, and links outside `docs/` point to GitHub.
 
@@ -101,11 +101,11 @@ a throwaway instance with demo projects, never from real data.
 The `Website` workflow builds the site on pull requests that touch `docs/` or `site/`, and deploys it on pushes to
 `main`. One-time setup:
 
-1. In Cloudflare: **Workers & Pages → Create → Pages → Direct Upload**, name the project `project-hub`.
+1. In Cloudflare: **Workers & Pages → Create → Pages → Direct Upload**, name the project `projecthubapp`.
 2. Create an API token with the **Cloudflare Pages: Edit** permission and note your account ID.
 3. Add them as repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 
-To deploy by hand: `bun run build && bunx wrangler pages deploy dist --project-name=project-hub`.
+To deploy by hand: `bun run build && bunx wrangler pages deploy dist --project-name=projecthubapp`.
 
 ## Releasing
 
