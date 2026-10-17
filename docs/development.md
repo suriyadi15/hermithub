@@ -20,6 +20,7 @@ docker/            entrypoint (PUID/PGID remap) and shell profile
 Dockerfile         multi-stage: deps → build → runtime
 scripts/           build-binaries.ts: standalone executables → dist/
 install.sh         installer: standalone executable (default) or Docker
+site/              website: landing page + docs (Astro Starlight, Cloudflare Pages)
 ```
 
 Sessions are tmux sessions on a private socket. Metadata (project, worktree, mode, label, task) is stored as tmux
@@ -79,6 +80,32 @@ multi-arch image to GHCR and attaches the executables plus `SHA256SUMS` to the G
 `skills/hermithub/SKILL.md` documents the installer for AI agents. When installer flags, `.env` options or
 operating commands change, update it (and `references/troubleshooting.md`), then check it with
 `claude plugin validate --strict .`.
+
+## Website
+
+`site/` is the website (landing page and docs), built with Astro Starlight and deployed to Cloudflare Pages at
+https://project-hub.pages.dev. The docs pages are generated from `docs/*.md` on every build
+(`site/scripts/sync-docs.ts`), so edit the files in `docs/`, not the generated copies. Links between docs files
+(`installation.md`) become site links, and links outside `docs/` point to GitHub.
+
+```bash
+cd site
+bun install
+bun run dev        # http://localhost:4321
+bun run build      # → site/dist, fails on broken internal links
+```
+
+The landing page is `site/src/content/docs/index.mdx`. Screenshots in `site/src/assets/screenshots` are taken from
+a throwaway instance with demo projects, never from real data.
+
+The `Website` workflow builds the site on pull requests that touch `docs/` or `site/`, and deploys it on pushes to
+`main`. One-time setup:
+
+1. In Cloudflare: **Workers & Pages → Create → Pages → Direct Upload**, name the project `project-hub`.
+2. Create an API token with the **Cloudflare Pages: Edit** permission and note your account ID.
+3. Add them as repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+
+To deploy by hand: `bun run build && bunx wrangler pages deploy dist --project-name=project-hub`.
 
 ## Releasing
 
