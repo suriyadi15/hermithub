@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Elysia, status, t } from "elysia";
@@ -9,6 +9,8 @@ export const COOKIE = "hub_session";
 const SESSION_TTL = 30 * 24 * 3600 * 1000;
 const MAX_FAILS = 5;
 const FAIL_WINDOW = 15 * 60 * 1000;
+/** Failed attempts from all IPs together before every login is paused; a backstop if IPs rotate. */
+const MAX_GLOBAL_FAILS = 30;
 
 /** Seed the password from the environment (headless installs); the DB value wins afterwards. */
 export async function ensurePassword() {
@@ -64,12 +66,23 @@ export function parseCookies(header: string | null): Record<string, string> {
   return out;
 }
 
+/** Only a hash of each session token is stored, so a leaked database does not hand out logins. */
+export function hashToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+// Sessions from before tokens were hashed can no longer match; drop them (one-time sign-out).
+if (!getSetting("session_tokens_hashed")) {
+  db.query("DELETE FROM auth_sessions").run();
+  setSetting("session_tokens_hashed", "1");
+}
+
 export function isAuthed(request: Request): boolean {
   const token = parseCookies(request.headers.get("cookie"))[COOKIE];
   if (!token) return false;
   const row = db
     .query<{ expires_at: number }, [string]>("SELECT expires_at FROM auth_sessions WHERE token = ?")
-    .get(token);
+    .get(hashToken(token));
   return !!row && row.expires_at > Date.now();
 }
 
@@ -117,7 +130,7 @@ function startLogin(request: Request) {
   const now = Date.now();
   db.query("DELETE FROM auth_sessions WHERE expires_at < ?").run(now);
   db.query("INSERT INTO auth_sessions (token, created_at, expires_at, user_agent) VALUES (?, ?, ?, ?)").run(
-    token,
+    hashToken(token),
     now,
     now + SESSION_TTL,
     request.headers.get("user-agent"),
@@ -125,27 +138,48 @@ function startLogin(request: Request) {
   return cookieHeader(request, token, SESSION_TTL / 1000);
 }
 
-const fails = new Map<string, { count: number; until: number }>();
+type FailCount = { count: number; until: number };
+const fails = new Map<string, FailCount>();
+let globalFails: FailCount = { count: 0, until: 0 };
 
-function locked(ip: string) {
+export function locked(ip: string, now = Date.now()) {
   const f = fails.get(ip);
-  return !!f && f.count >= MAX_FAILS && f.until > Date.now();
+  if (f && f.count >= MAX_FAILS && f.until > now) return true;
+  return globalFails.count >= MAX_GLOBAL_FAILS && globalFails.until > now;
 }
 
-function recordFail(ip: string) {
-  const f = fails.get(ip);
-  const cur = f && f.until > Date.now() ? f : { count: 0, until: Date.now() + FAIL_WINDOW };
+function bump(f: FailCount | undefined, now: number): FailCount {
+  const cur = f && f.until > now ? f : { count: 0, until: now + FAIL_WINDOW };
   cur.count++;
-  fails.set(ip, cur);
+  return cur;
 }
 
-export function clientIp(request: Request, server: { requestIP(r: Request): { address: string } | null } | null) {
-  return (
-    request.headers.get("cf-connecting-ip") ||
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    server?.requestIP(request)?.address ||
-    "unknown"
-  );
+export function recordFail(ip: string, now = Date.now()) {
+  for (const [k, f] of fails) if (f.until <= now) fails.delete(k);
+  fails.set(ip, bump(fails.get(ip), now));
+  globalFails = bump(globalFails, now);
+}
+
+export function resetFails() {
+  fails.clear();
+  globalFails = { count: 0, until: 0 };
+}
+
+/**
+ * IP used for the login lockout. Forwarded headers can be set by anyone, so they only count when
+ * TRUST_PROXY says a proxy in front sets them: "1"/"true" = the last X-Forwarded-For entry (the one
+ * added by the nearest proxy), "cloudflare" = CF-Connecting-IP. Otherwise the socket address is used.
+ */
+export function clientIp(
+  request: Request,
+  server: { requestIP(r: Request): { address: string } | null } | null,
+  trust = process.env.TRUST_PROXY ?? "",
+) {
+  const mode = trust.trim().toLowerCase();
+  let ip: string | undefined;
+  if (mode === "cloudflare") ip = request.headers.get("cf-connecting-ip")?.trim();
+  else if (mode === "1" || mode === "true") ip = request.headers.get("x-forwarded-for")?.split(",").pop()?.trim();
+  return ip || server?.requestIP(request)?.address || "unknown";
 }
 
 export const authRoutes = new Elysia({ prefix: "/api/auth" })
@@ -170,7 +204,7 @@ export const authRoutes = new Elysia({ prefix: "/api/auth" })
   )
   .post("/logout", ({ request, set }) => {
     const token = parseCookies(request.headers.get("cookie"))[COOKIE];
-    if (token) db.query("DELETE FROM auth_sessions WHERE token = ?").run(token);
+    if (token) db.query("DELETE FROM auth_sessions WHERE token = ?").run(hashToken(token));
     set.headers["set-cookie"] = cookieHeader(request, "", 0);
     return { ok: true };
   })

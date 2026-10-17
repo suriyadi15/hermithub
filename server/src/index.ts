@@ -23,8 +23,17 @@ const VERSION: string =
   process.env.HUB_VERSION || ((await Bun.file(join(import.meta.dir, "../../package.json")).json()).version ?? "dev");
 const PUBLIC_API = new Set(["/api/health", "/api/auth/login", "/api/auth/me", "/api/auth/logout", "/api/auth/setup"]);
 
+/** No framing (clickjacking), no MIME sniffing of served files, no setup token leaking via Referer. */
+const SECURITY_HEADERS = {
+  "x-frame-options": "DENY",
+  "content-security-policy": "frame-ancestors 'none'",
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "no-referrer",
+};
+
 const api = new Elysia()
-  .onRequest(({ request }) => {
+  .onRequest(({ request, set }) => {
+    Object.assign(set.headers, SECURITY_HEADERS);
     const path = new URL(request.url).pathname;
     if (!path.startsWith("/api/") && !path.startsWith("/ws/")) return;
     if ((request.method !== "GET" || path.startsWith("/ws/")) && !originOk(request)) {

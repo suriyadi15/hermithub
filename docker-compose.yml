@@ -15,6 +15,8 @@ services:
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-}
+      # Set when a reverse proxy sits in front, so login lockouts use the real client IP (docs/configuration.md).
+      TRUST_PROXY: ${TRUST_PROXY:-}
       # GitHub auth goes through `gh` over HTTPS, so let SSH-style URLs (git@github.com:user/repo)
       # use it too instead of failing for lack of an SSH key.
       GIT_CONFIG_COUNT: "1"

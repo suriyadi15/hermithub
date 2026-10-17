@@ -74,8 +74,10 @@ export const fileRoutes = new Elysia({ prefix: "/api/files" })
     "/download",
     async ({ query, set }) => {
       const { abs } = resolveInProject(query.project, query.path);
-      const file = Bun.file(abs);
-      if (!(await file.exists())) throw new HttpError(404, "File not found");
+      const st = await stat(abs).catch(() => null);
+      if (!st?.isFile()) throw new HttpError(404, "File not found");
+      // Never let the browser render a project file (e.g. .html/.svg) on the dashboard's origin.
+      const file = Bun.file(abs, { type: "application/octet-stream" });
       set.headers["content-disposition"] = `attachment; filename="${encodeURIComponent(basename(abs))}"`;
       return file;
     },

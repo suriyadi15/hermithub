@@ -11,7 +11,11 @@ like an SSH key.
 - **Setup token.** Until a password exists, setting one requires a random token printed in the server logs,
   so whoever reaches the port first cannot claim the instance.
 - **Password login** (argon2 hash), `HttpOnly`, `SameSite=Strict` cookies, `Secure` over HTTPS. After 5 failed
-  attempts an IP is locked out for 15 minutes. Changing the password signs out every device.
+  attempts an IP is locked out for 15 minutes, and after 30 failures from any IPs all logins pause for 15
+  minutes. Client IPs come from proxy headers only when `TRUST_PROXY` is set. Session tokens are stored
+  hashed. Changing the password signs out every device.
+- **Security headers**: no framing (`frame-ancestors 'none'`), `nosniff`, `no-referrer`; downloads are
+  always served as attachments.
 - **Same-origin checks** on every non-GET request and every WebSocket.
 - **Path checks.** File APIs resolve every path (symlinks included) and refuse anything outside the projects folder.
 - **Container isolation.** Agents run as an unprivileged user in the container. Nothing from the host is

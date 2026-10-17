@@ -11,6 +11,7 @@ Almost everything is configured in the dashboard (**Settings**). The `.env` file
 | `COMPOSE_PROFILES` | – | `https` enables the bundled Caddy reverse proxy |
 | `HUB_DOMAIN` | – | Domain for the bundled Caddy (automatic Let's Encrypt) |
 | `PUBLIC_ORIGIN` | – | Public URL(s), comma separated, e.g. `https://hub.example.com`. Needed when a proxy rewrites the `Host` header; also forces `Secure` cookies. |
+| `TRUST_PROXY` | – | Header with the client IP for the login lockout: `1` = last `X-Forwarded-For` entry (Caddy, nginx, Traefik), `cloudflare` = `CF-Connecting-IP`. Empty: forwarded headers are ignored. Only set it when the port is reachable through that proxy alone. |
 | `HUB_DATA` | `./data` | Where `home/` and `db/` live |
 | `HUB_PROJECTS` | `./data/projects` | Where projects live |
 | `HUB_VERSION` | `latest` | Image tag |

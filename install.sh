@@ -114,6 +114,7 @@ if [[ -n "$DOMAIN" ]]; then
   set_env COMPOSE_PROFILES https
   set_env HUB_DOMAIN "$DOMAIN"
   set_env PUBLIC_ORIGIN "https://$DOMAIN"
+  set_env TRUST_PROXY 1
 fi
 
 # Create the data folders ourselves, so Docker does not create them owned by root.

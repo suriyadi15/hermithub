@@ -12,6 +12,7 @@ For a server with a public IP and a domain pointing to it:
 # COMPOSE_PROFILES=https
 # HUB_DOMAIN=hub.example.com
 # PUBLIC_ORIGIN=https://hub.example.com
+# TRUST_PROXY=1
 docker compose up -d
 ```
 
@@ -19,7 +20,9 @@ Caddy gets a Let's Encrypt certificate and renews it. Ports 80 and 443 must be f
 
 ## Your own reverse proxy
 
-WebSockets (`/ws/…`) must be forwarded. Set `PUBLIC_ORIGIN` if the proxy changes the `Host` header.
+WebSockets (`/ws/…`) must be forwarded. Set `PUBLIC_ORIGIN` if the proxy changes the `Host` header, and
+`TRUST_PROXY=1` so failed-login lockouts apply to the real client IP rather than the proxy's. Without it,
+forwarded headers are ignored (anyone could fake them); all logins then count as the proxy's IP.
 
 Caddy:
 
@@ -64,7 +67,7 @@ cloudflared tunnel --url http://localhost:8787            # quick test
 # or a named tunnel with ingress: service: http://localhost:8787
 ```
 
-Set `PUBLIC_ORIGIN=https://<your-hostname>` in `.env`.
+Set `PUBLIC_ORIGIN=https://<your-hostname>` and `TRUST_PROXY=cloudflare` in `.env`.
 
 ## Tailscale / VPN
 
