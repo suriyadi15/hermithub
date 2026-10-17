@@ -8,6 +8,7 @@
     "dev:server": "bun --watch server/src/index.ts",
     "dev:web": "bun run --cwd web dev",
     "build": "bun run --cwd web build",
+    "build:bin": "bun scripts/build-binaries.ts",
     "start": "bun server/src/index.ts",
     "test": "bun test server",
     "typecheck": "bun run --cwd web tsc -p ../server --noEmit && bun run --cwd web tsc -p . --noEmit",

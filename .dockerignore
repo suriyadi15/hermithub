@@ -8,3 +8,4 @@ web/dist
 bunx.sh
 /data
 docker-compose.override.yml
+dist

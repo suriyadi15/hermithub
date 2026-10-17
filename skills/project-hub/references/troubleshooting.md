@@ -1,5 +1,25 @@
 # Project Hub troubleshooting
 
+## Standalone install
+
+Start with `project-hub doctor` and `journalctl --user -u project-hub -n 100` (macOS:
+`tail -100 ~/Library/Logs/project-hub.log`).
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Installer: `Download failed` | No release with executables for that version yet | Use `--docker`, or another `--version` |
+| Installer: `Run this as your normal user, not root` | Ran as root | Create or switch to a normal user, or use `--docker` |
+| Installer: `No systemd user session here` | `su`/`sudo -u` shell, container or OpenRC | Log in as that user directly (SSH), or start it with the printed `nohup` command |
+| Hub stops when you log out | Lingering is off | `sudo loginctl enable-linger $USER` |
+| `address already in use` | Port taken | Change `PORT` in `~/.config/project-hub/env`, `systemctl --user restart project-hub` |
+| Sessions fail with `tmux: command not found` | tmux missing or not on the service PATH | Install tmux; the service PATH is set in `~/.config/project-hub/run.sh` (re-run the installer to regenerate it) |
+| "X is not installed" right after installing an npm agent | Node.js/npm missing | Install Node.js 20+ with npm, then install the agent again |
+| Lost setup link | – | `cat ~/.project-hub/setup-token` |
+
+Restarting or updating the service keeps tmux sessions running. `install.sh --uninstall` stops them.
+
+## Docker install
+
 Run commands from the install folder. Start with:
 
 ```bash

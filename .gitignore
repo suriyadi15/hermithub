@@ -6,3 +6,4 @@ web/dist
 .data
 /data
 docker-compose.override.yml
+dist

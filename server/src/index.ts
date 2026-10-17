@@ -1,3 +1,4 @@
+import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { Elysia, status, t } from "elysia";
 import { authRoutes, ensurePassword, initSetupToken, isAuthed, originOk } from "./auth";
@@ -16,12 +17,13 @@ import { taskRoutes } from "./tasks";
 import { terminalRoutes } from "./terminal";
 import { worktreeRoutes } from "./worktrees";
 import { applyGlobalOptions } from "./tmux";
+import { embeddedWebFile } from "./web-embed";
+import pkg from "../../package.json";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const HOST = process.env.HOST ?? "127.0.0.1";
 const WEB_DIST = resolve(process.env.WEB_DIST ?? join(import.meta.dir, "../../web/dist"));
-const VERSION: string =
-  process.env.HUB_VERSION || ((await Bun.file(join(import.meta.dir, "../../package.json")).json()).version ?? "dev");
+export const VERSION: string = process.env.HUB_VERSION || pkg.version || "dev";
 const PUBLIC_API = new Set(["/api/health", "/api/auth/login", "/api/auth/me", "/api/auth/logout", "/api/auth/setup"]);
 
 /** No framing (clickjacking), no MIME sniffing of served files, no setup token leaking via Referer. */
@@ -69,20 +71,29 @@ const api = new Elysia()
 
 export type App = typeof api;
 
-/** Built SPA: serve the file if it exists, otherwise index.html so client-side routes work. */
+/**
+ * Built SPA: serve the file if it exists, otherwise index.html so client-side routes work. web/dist on disk wins;
+ * the standalone executable falls back to the copy built into it.
+ */
 const app = api.get("/*", async ({ path, set }) => {
   if (path.startsWith("/api/") || path.startsWith("/ws/")) return status(404, { error: "Not found" });
-  const file = Bun.file(resolve(WEB_DIST, "." + decodeURIComponent(path)));
-  if (file.name!.startsWith(WEB_DIST + "/") && (await file.exists())) {
+  const rel = decodeURIComponent(path);
+  const file = Bun.file(resolve(WEB_DIST, "." + rel));
+  const found = file.name!.startsWith(WEB_DIST + "/") && (await file.exists()) ? file : embeddedWebFile(rel);
+  if (found) {
     if (path.startsWith("/assets/")) set.headers["cache-control"] = "public, max-age=31536000, immutable";
-    return file;
+    return found;
   }
   const index = Bun.file(join(WEB_DIST, "index.html"));
   if (await index.exists()) return index;
+  const embeddedIndex = embeddedWebFile("/index.html");
+  if (embeddedIndex) return embeddedIndex;
   return new Response("Frontend not built yet. Run `bun run build`.", { status: 503 });
 });
 
-if (import.meta.main) {
+export async function start() {
+  // The Docker entrypoint creates it; the standalone install starts with an empty home.
+  mkdirSync(PROJECTS_DIR, { recursive: true });
   await ensurePassword();
   const token = initSetupToken();
   await applyGlobalOptions(); // no-op when no tmux server is running yet
@@ -93,5 +104,7 @@ if (import.meta.main) {
     console.log(`\nFirst run: create your password at\n  ${origin}/setup?token=${token}\n`);
   }
 }
+
+if (import.meta.main) await start();
 
 export { app };

@@ -1,8 +1,8 @@
 # Security
 
-Project Hub is a remote shell with a web UI. Anyone who logs in can run any command in the container and
-read everything in it — your projects, agent credentials, GitHub token and SSH key. Treat the password
-like an SSH key.
+Project Hub is a remote shell with a web UI. Anyone who logs in can run any command in the container (Docker)
+or as your user account (standalone executable), and read everything there — your projects, agent credentials,
+GitHub token and SSH key. Treat the password like an SSH key.
 
 ## What protects it
 
@@ -21,9 +21,11 @@ like an SSH key.
   always served as attachments.
 - **Same-origin checks** on every non-GET request and every WebSocket.
 - **Path checks.** File APIs resolve every path (symlinks included) and refuse anything outside the projects folder.
-- **Container isolation.** Agents run as an unprivileged user in the container. Nothing from the host is
-  mounted except the data folders.
-- **No host credentials.** Agent and GitHub logins are separate from the host's.
+- **Container isolation (Docker).** Agents run as an unprivileged user in the container. Nothing from the host is
+  mounted except the data folders, and agent and GitHub logins are separate from the host's.
+- **Standalone executable: no isolation.** Agents run as your user and can reach everything that user can:
+  other folders, `~/.ssh`, cloud CLIs and their credentials. The installer refuses to run as root. For a shared or
+  internet-facing server, prefer Docker or a dedicated user account (e.g. `adduser hub`) for the hub.
 
 ## Recommendations
 

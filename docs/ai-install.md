@@ -46,6 +46,6 @@ and follow it to install Project Hub on this machine.
 - "I lost the Project Hub setup link."
 - "Uninstall Project Hub but keep my projects."
 
-The agent checks Docker, asks before installing anything with `sudo` or exposing ports, runs the installer
+The agent picks the standalone executable or Docker with you, checks what is missing, asks before installing anything with `sudo` or exposing ports, runs the installer
 and gives you the setup link. It does not choose your password or log in to agents/GitHub for you — you do
 that in the dashboard.

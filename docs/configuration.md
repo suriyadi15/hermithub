@@ -1,7 +1,33 @@
 # Configuration
 
-Almost everything is configured in the dashboard (**Settings**). The `.env` file next to
-`docker-compose.yml` only holds a few deployment options; all are optional.
+Almost everything is configured in the dashboard (**Settings**). The rest are a few deployment options, all optional.
+
+## Standalone executable
+
+Settings live in `~/.config/project-hub/env` (written by the installer). Restart the service after a change:
+`systemctl --user restart project-hub` on Linux, `launchctl kickstart -k gui/$(id -u)/dev.project-hub` on macOS.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `PORT` | `8787` | Port of the dashboard |
+| `HOST` | `127.0.0.1` | Address to listen on. `0.0.0.0` exposes it on all interfaces. |
+| `DATA_DIR` | `~/.project-hub` | Database, setup token, tmux config |
+| `PROJECTS_DIR` | `~/projects` | Where projects live |
+| `PUBLIC_ORIGIN` | – | Public URL(s) behind a reverse proxy, as below |
+| `TRUST_PROXY` | – | Client IP header behind a proxy, as below |
+| `HUB_PASSWORD` | – | Seeds the password on first start instead of the setup page |
+| `HUB_TMUX_SOCKET` | `hub` | Name of the private tmux server (`tmux -L hub ls` lists the sessions) |
+
+The service starts through `~/.config/project-hub/run.sh`, which the installer regenerates. It puts `~/.local/bin`
+and the usual system folders on `PATH`, and sets `NPM_CONFIG_PREFIX=~/.local` so agents installed from the dashboard
+with npm need no sudo. Agents, their logins, `gh`, git config and SSH keys are your user's own.
+
+There are no container limits. Use systemd's (`systemctl --user edit project-hub`, then `MemoryMax=6G` under `[Service]`)
+if you want a cap.
+
+## Docker
+
+The `.env` file next to `docker-compose.yml` holds these:
 
 | Variable | Default | Meaning |
 |---|---|---|

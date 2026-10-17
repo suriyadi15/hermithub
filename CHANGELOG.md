@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **Install without Docker.** Each release now ships a standalone `project-hub` executable for Linux (x64/arm64,
+  glibc and musl) and macOS (Intel/Apple silicon), with the frontend built in. `install.sh` installs it by default.
+  It detects the OS and CPU, installs tmux and git when missing, verifies the checksum, and runs Project Hub as a
+  systemd user service or launchd agent. Agent sessions survive restarts and updates. `--docker` keeps the
+  container install, and existing Docker installs keep updating as Docker. New options: `--prefix`, `--no-service`,
+  `--uninstall`, `--purge`. See [docs/installation.md](docs/installation.md).
+- `project-hub` commands: `serve`, `set-password`, `disable-2fa`, `doctor`, `version`.
+- Server stats work on macOS.
+
 - **Stop session** on a session in a worktree can remove the worktree too (and its branch once merged), so a
   finished task is cleaned up in one step. Worktrees with uncommitted changes or other sessions are kept.
 

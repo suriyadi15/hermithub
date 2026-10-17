@@ -16,6 +16,20 @@ jobs:
       - run: bun run typecheck
       - run: bun test server
       - run: bun run build
+      - name: Build and smoke-test the standalone executable
+        run: |
+          bun run build:bin --host
+          bin=$(ls dist/project-hub-linux-*)
+          dir=$(mktemp -d)
+          cd "$dir"   # no web/dist here: the frontend must come from the executable
+          HOME="$dir" DATA_DIR="$dir/data" PROJECTS_DIR="$dir/projects" PORT=18787 "$GITHUB_WORKSPACE/$bin" &
+          for _ in $(seq 1 30); do curl -fsS http://127.0.0.1:18787/api/health && break; sleep 1; done
+          index=$(curl -fsS http://127.0.0.1:18787/)
+          grep -q '<div id="root">' <<<"$index"
+          asset=$(grep -o '/assets/[^"]*\.js' <<<"$index" | head -1)
+          curl -fsS -o /dev/null "http://127.0.0.1:18787$asset"
+          "$GITHUB_WORKSPACE/$bin" version
+          kill %1
 
   docker:
     runs-on: ubuntu-latest

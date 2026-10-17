@@ -1,13 +1,19 @@
 ---
 name: project-hub
-description: Install, update, configure, troubleshoot or uninstall Project Hub — the self-hosted web dashboard that runs AI coding agents (Claude Code, Codex CLI, Gemini CLI, OpenCode, Copilot CLI, Qwen Code, Crush) in one Docker container. Use when the user says things like "install Project Hub", "set up project-hub on my server/VPS", "deploy the agent dashboard with my domain", "update Project Hub", "Project Hub won't start", "I lost the setup link", "reset the Project Hub password", or "remove Project Hub".
+description: Install, update, configure, troubleshoot or uninstall Project Hub — the self-hosted web dashboard that runs AI coding agents (Claude Code, Codex CLI, Gemini CLI, OpenCode, Copilot CLI, Qwen Code, Crush), installed as a standalone executable or a Docker container. Use when the user says things like "install Project Hub", "set up project-hub on my server/VPS", "deploy the agent dashboard with my domain", "update Project Hub", "Project Hub won't start", "I lost the setup link", "reset the Project Hub password", or "remove Project Hub".
 ---
 
 # Project Hub — install & operate
 
-Project Hub: https://github.com/suriyadi15/project-hub. One container, all data under `<install dir>/data`.
-Nothing is installed on the host besides Docker. Agents, GitHub login and git settings are configured
-afterwards **in the dashboard by the user**, not by you.
+Project Hub: https://github.com/suriyadi15/project-hub. Two install modes, both from `install.sh`:
+
+- **Standalone** (default): one `project-hub` executable in `~/.local/bin`, run as a systemd user service
+  (Linux) or launchd agent (macOS). Needs tmux and git. Settings in `~/.config/project-hub/env`, data in
+  `~/.project-hub`, projects in `~/projects`. Agents run as the user, with no container in between.
+- **Docker** (`--docker`): one container, all data under `<install dir>/data` (default `~/project-hub`).
+  Agents are isolated from the host; built-in HTTPS with `--domain`.
+
+Agents, GitHub login and git settings are configured afterwards **in the dashboard by the user**, not by you.
 
 Commands below run on the **target machine** (the computer or server that will host the hub). If that is a
 remote server, run them over `ssh user@host '…'` or in a session there.
@@ -35,12 +41,19 @@ Ask only what you cannot detect:
      the server; ports 80/443 free and open),
    - via SSH tunnel / Tailscale / Cloudflare Tunnel → default, then point the user to
      `docs/reverse-proxy.md`.
-3. Install folder (default `~/project-hub`) and port (default `8787`) — only if the user cares.
+3. **Mode**: standalone (no Docker, lighter, agents see the whole user account) or Docker (isolated, built-in
+   HTTPS). `--domain` needs Docker. If Docker is already running there or the user wants isolation or
+   `--domain`, suggest Docker; otherwise standalone. Windows is not supported (use WSL 2 with Docker).
+4. Install folder (Docker, default `~/project-hub`) and port (default `8787`) — only if the user cares.
 
 ## 2. Preflight checks
 
 ```bash
 uname -sm                                   # Linux x86_64/aarch64 or Darwin
+id -u                                       # standalone refuses root (0): use or create a normal user
+command -v tmux git node npm gh             # standalone: tmux + git required, the rest optional
+systemctl --user show-environment >/dev/null 2>&1 && echo user-systemd   # standalone service on Linux
+ls ~/.local/bin/project-hub 2>/dev/null && echo existing-standalone
 command -v docker && docker info >/dev/null 2>&1 && echo docker-ok
 docker compose version                      # needs Compose v2
 sudo -n true 2>/dev/null && echo sudo-nopass   # can you sudo without a prompt?
@@ -50,7 +63,11 @@ ls ~/project-hub/docker-compose.yml 2>/dev/null && echo existing-install
 For `--domain`: `curl -s https://api.ipify.org` vs `getent hosts <domain>` (they should match) and
 `sudo ss -ltnp | grep -E ':(80|443) '` (must be free).
 
-- **No Docker on Linux**: ask the user, then let the installer install it with `--yes`. It needs root or
+- **Standalone, tmux/git missing**: the installer installs them with the package manager (sudo) after
+  asking; with `--yes` it does so without asking. On macOS it needs Homebrew.
+- **Standalone, no systemd user session** (container, Alpine, `su` shell): the installer only installs the
+  executable and prints the start command. On a server reached over SSH, log in as the user directly.
+- **No Docker on Linux** (Docker mode): ask the user, then let the installer install it with `--yes`. It needs root or
   passwordless sudo. If sudo asks for a password, ask the user to run the install command themselves
   (in Claude Code they can type `! <command>`).
 - **No Docker on macOS/Windows**: the user must install Docker Desktop; stop and tell them.
@@ -63,15 +80,25 @@ For `--domain`: `curl -s https://api.ipify.org` vs `getent hosts <domain>` (they
 Non-interactive (you have no TTY, so always pass `--yes`, after the user agreed to what it implies):
 
 ```bash
+# standalone executable:
 curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --yes
-# with HTTPS on a domain:
-curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --yes --domain hub.example.com
+# Docker:
+curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --yes --docker
+# Docker with HTTPS on a domain:
+curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --yes --docker --domain hub.example.com
 ```
 
-Other flags: `--dir PATH`, `--port N`, `--version TAG`, `--public` (all interfaces — only on a private
-network/VPN and only if the user insists).
+Other flags: `--port N`, `--version TAG`, `--public` (all interfaces — only on a private network/VPN and
+only if the user insists); standalone: `--prefix PATH`, `--no-service`; Docker: `--dir PATH`.
+Without `--docker`/`--native`, an existing Docker install in `~/project-hub` is updated as Docker.
 
-The installer downloads `docker-compose.yml`, writes `.env` (PUID/PGID of the current user), creates
+**Standalone**: the installer downloads `project-hub-<os>-<arch>` from the GitHub release, verifies
+`SHA256SUMS`, writes `~/.config/project-hub/{env,run.sh}`, starts the service (on Linux it asks to
+`loginctl enable-linger` so it survives logout), waits for `/api/health` and prints the **setup link**.
+If the download fails (no release with executables yet), use `--docker` or run from source
+(`docs/development.md`).
+
+**Docker**: the installer downloads `docker-compose.yml`, writes `.env` (PUID/PGID of the current user), creates
 `data/{home,projects,db}`, pulls `ghcr.io/suriyadi15/project-hub`, starts it, waits for
 `/api/health` and prints the **setup link**.
 
@@ -89,9 +116,21 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 (The first build takes a few minutes.) The install folder is then `~/project-hub-src`.
 
 **Headless password** (only if the user asked you to set it): before the first start add
-`HUB_PASSWORD=<their password>` to `.env`; it seeds the password and the setup page is skipped.
+`HUB_PASSWORD=<their password>` to `.env` (Docker) or `~/.config/project-hub/env` (standalone); it seeds the
+password and the setup page is skipped.
 
 ## 4. Verify and hand over
+
+Standalone:
+
+```bash
+systemctl --user status project-hub    # Linux; macOS: launchctl print gui/$(id -u)/dev.project-hub
+curl -fsS http://127.0.0.1:8787/api/health
+cat ~/.project-hub/setup-token         # exists until a password is set
+project-hub doctor                     # tmux/git/node/npm/gh found?
+```
+
+Docker:
 
 ```bash
 cd ~/project-hub                       # or the folder you used
@@ -107,14 +146,25 @@ Tell the user:
    the localhost link.
 2. Next steps in the dashboard: **Settings → AI agents → Install** (Claude Code / Codex / Gemini / OpenCode / Copilot / Qwen / Crush) →
    **Log in** (or paste an API key) → **Settings → GitHub → Log in with GitHub** → set **Git identity**.
-3. Data lives in `<install dir>/data`; back that folder up.
+3. Data lives in `~/.project-hub` + `~/projects` (standalone) or `<install dir>/data` (Docker); back it up.
 
 With `--domain`, Caddy may need up to a minute for the certificate; check
 `docker compose logs caddy` if HTTPS fails.
 
 ## Operate
 
-Run from the install folder.
+Standalone:
+
+| Task | Command |
+|---|---|
+| Update | re-run the installer. Running agent sessions keep going (tmux is not restarted). |
+| Logs | `journalctl --user -u project-hub -f` (macOS: `tail -f ~/Library/Logs/project-hub.log`) |
+| Restart after editing `~/.config/project-hub/env` | `systemctl --user restart project-hub` (macOS: `launchctl kickstart -k gui/$(id -u)/dev.project-hub`) |
+| Lost setup link | `cat ~/.project-hub/setup-token` |
+| Forgot password / lost 2FA | `project-hub set-password` / `project-hub disable-2fa` (the user should run them) |
+| Uninstall | `install.sh --uninstall` (keeps data); `--uninstall --purge` also deletes settings and database — **only after explicit confirmation**. `~/projects` is never deleted. |
+
+Docker, run from the install folder:
 
 | Task | Command |
 |---|---|

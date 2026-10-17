@@ -1,16 +1,119 @@
 # Installation
 
+Project Hub can be installed two ways:
+
+- **Standalone executable** (default): a single `project-hub` file that runs as a user service. No Docker needed.
+- **Docker**: the container image with `docker compose`. Agents are isolated from the host, and built-in HTTPS
+  is available with `--domain`.
+
 ## Requirements
 
-- Linux (x86_64 or arm64) or macOS with Docker. Windows works through Docker Desktop + WSL 2.
-- Docker Engine 24+ with the Compose v2 plugin (`docker compose`). The installer can install Docker on Linux.
-- About 1.5 GB of disk for the image and agents, plus your projects. 2 GB RAM or more is recommended;
-  each agent session uses a few hundred MB.
+**Standalone executable**
 
-## One-command install
+- Linux (x86_64 or arm64, glibc or musl/Alpine) or macOS (Intel or Apple silicon).
+- `tmux` and `git`. The installer installs them with your package manager (apt, dnf, yum, pacman, zypper, apk
+  or Homebrew) after asking.
+- Optional: Node.js 20+ with npm for npm-distributed agents (Codex, Gemini CLI, OpenCode, Copilot, Qwen, Crush),
+  and GitHub CLI (`gh`) to log in to GitHub from the dashboard. Claude Code needs neither.
+- A normal user account. The installer refuses to run as root.
+
+**Docker**
+
+- Linux (x86_64 or arm64) or macOS with Docker.
+- Docker Engine 24+ with the Compose v2 plugin (`docker compose`). The installer can install Docker on Linux.
+- About 1.5 GB of disk for the image and agents, plus your projects.
+
+Either way, 2 GB RAM or more is recommended; each agent session uses a few hundred MB.
+
+## One-command install (standalone)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash
+```
+
+What it does:
+
+1. Detects the OS and CPU and installs `tmux` and `git` if they are missing (after asking).
+2. Downloads `project-hub-<os>-<arch>` from the latest GitHub release, checks it against `SHA256SUMS` and
+   installs it to `~/.local/bin/project-hub`.
+3. Writes the settings to `~/.config/project-hub/env`.
+4. Starts it as a user service. On Linux this is a systemd user unit (`project-hub.service`), and the installer
+   offers `loginctl enable-linger` so the service keeps running after you log out. On macOS it is a launchd agent
+   (`dev.project-hub`).
+5. Prints the setup link with a one-time token.
+
+Data goes to `~/.project-hub` (database, settings) and projects to `~/projects`. Agents, their logins, GitHub
+CLI and git config are those of your user account (`~/.local`, `~/.claude`, `~/.config/gh`, `~/.gitconfig`…).
+
+On a system without a systemd user session (Alpine/OpenRC, a container, a `su` shell), or with `--no-service`,
+the installer prints the command to start Project Hub yourself.
+
+### Options
+
+Pass them after `bash -s --`, e.g. `curl -fsSL …/install.sh | bash -s -- --port 9000 --yes`.
+
+| Option | Meaning |
+|---|---|
+| `--port N` | Port of the dashboard (default `8787`) |
+| `--public` | Listen on all interfaces instead of `127.0.0.1`. Only on a private network or behind a VPN. |
+| `--version TAG` | Release to install, e.g. `v0.5.0` (default: latest) |
+| `--prefix PATH` | Install the executable into `PATH/bin` (default `~/.local`) |
+| `--no-service` | Do not create a systemd / launchd service |
+| `--uninstall` | Remove the service and the executable, keep the data |
+| `--purge` | With `--uninstall`: also delete `~/.config/project-hub` and `~/.project-hub`. Projects are never deleted. |
+| `--docker` | Use Docker instead (see below) |
+| `--native` | Force the standalone install even if a Docker install exists in `~/project-hub` |
+| `-y`, `--yes` | Do not ask questions |
+
+Built-in HTTPS (`--domain`) is Docker-only. For the standalone install put a reverse proxy in front, see
+[reverse-proxy.md](reverse-proxy.md), and set `PUBLIC_ORIGIN` / `TRUST_PROXY` in `~/.config/project-hub/env`.
+
+### Managing the service
+
+Linux (systemd):
+
+```bash
+systemctl --user status project-hub
+journalctl --user -u project-hub -f        # logs
+systemctl --user restart project-hub       # after editing ~/.config/project-hub/env
+```
+
+macOS (launchd):
+
+```bash
+tail -f ~/Library/Logs/project-hub.log
+launchctl kickstart -k gui/$(id -u)/dev.project-hub
+```
+
+Agent sessions run in their own tmux server (`tmux -L hub`), which is not stopped when the service restarts
+or updates. Running sessions keep going.
+
+The executable has a few commands of its own:
+
+```bash
+project-hub doctor          # are tmux, git, node, npm, gh available?
+project-hub version
+project-hub set-password    # forgot the password
+project-hub disable-2fa     # lost the authenticator and the recovery codes
+```
+
+`set-password` and `disable-2fa` use `~/.project-hub`. If you changed `DATA_DIR` in the env file, pass it along:
+`DATA_DIR=/path/to/data project-hub set-password`.
+
+### Update and uninstall
+
+Re-run the installer to update. It replaces the executable and restarts the service, and keeps your settings and data.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --uninstall
+# also delete settings and the database (projects in ~/projects stay):
+curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --uninstall --purge
+```
+
+## Docker install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --docker
 ```
 
 What it does:
@@ -20,47 +123,17 @@ What it does:
 3. Pulls the image and starts it.
 4. Prints the setup link with a one-time token.
 
-Options (pass them after `bash -s --`):
+Once `~/project-hub/docker-compose.yml` exists, re-running the installer without options updates the Docker
+install. Options for Docker, in addition to `--port`, `--public`, `--version` and `--yes`:
 
 | Option | Meaning |
 |---|---|
 | `--dir PATH` | Install folder (default `~/project-hub`) |
 | `--domain NAME` | Serve `https://NAME` with automatic Let's Encrypt certificates. DNS must point to the server and ports 80/443 must be reachable. |
-| `--port N` | Host port of the dashboard (default `8787`) |
-| `--public` | Listen on all interfaces instead of `127.0.0.1`. Only on a private network or behind a VPN. |
-| `--version TAG` | Image tag (default `latest`) |
-| `-y`, `--yes` | Do not ask questions |
 
-Example: `curl -fsSL …/install.sh | bash -s -- --domain hub.example.com --yes`
+Example: `curl -fsSL …/install.sh | bash -s -- --docker --domain hub.example.com --yes`
 
-Re-running the installer updates the install and keeps your `.env` and data.
-
-## First login
-
-Open the setup link printed by the installer. Lost it? Any of these show it again:
-
-```bash
-cd ~/project-hub
-docker compose logs project-hub | grep setup
-cat data/db/setup-token
-```
-
-The token only works until a password is set. For automated installs you can skip the setup page by
-putting `HUB_PASSWORD=…` in `.env` before the first start.
-
-Forgot the password:
-
-```bash
-docker compose exec -u hub project-hub bun run set-password
-```
-
-Lost the phone with your authenticator app and have no recovery codes left:
-
-```bash
-docker compose exec -u hub project-hub bun run disable-2fa
-```
-
-## Manual install
+### Manual Docker install
 
 ```bash
 mkdir project-hub && cd project-hub
@@ -70,11 +143,38 @@ mkdir -p data/home data/projects data/db
 docker compose up -d
 ```
 
-## Uninstall
+### Docker uninstall
 
 ```bash
 cd ~/project-hub
 docker compose down
 # Optional — deletes all projects, logins and settings:
 rm -rf ~/project-hub
+```
+
+## First login
+
+Open the setup link printed by the installer. Lost it? Any of these show it again:
+
+```bash
+cat ~/.project-hub/setup-token                        # standalone
+cat ~/project-hub/data/db/setup-token                 # Docker
+cd ~/project-hub && docker compose logs project-hub | grep setup
+```
+
+The token only works until a password is set. For automated installs you can skip the setup page by
+putting `HUB_PASSWORD=…` in the env file (standalone) or `.env` (Docker) before the first start.
+
+Forgot the password:
+
+```bash
+project-hub set-password                                          # standalone
+docker compose exec -u hub project-hub bun run set-password       # Docker
+```
+
+Lost the phone with your authenticator app and have no recovery codes left:
+
+```bash
+project-hub disable-2fa                                           # standalone
+docker compose exec -u hub project-hub bun run disable-2fa        # Docker
 ```

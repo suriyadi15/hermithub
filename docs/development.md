@@ -5,6 +5,7 @@
 ```
 server/            Bun + Elysia backend
   src/index.ts     app, auth guard, static files
+  src/cli.ts       `project-hub` executable: serve, set-password, disable-2fa, doctor, version
   src/agents.ts    agent registry (install, login, launch) + /api/agents
   src/sessions.ts  project sessions (tmux) + /api/sessions
   src/tasks.ts     system tasks: installs and logins in tmux + /api/tasks
@@ -17,6 +18,8 @@ server/            Bun + Elysia backend
 web/               React 19 + Vite frontend (Eden Treaty client typed from the server)
 docker/            entrypoint (PUID/PGID remap) and shell profile
 Dockerfile         multi-stage: deps → build → runtime
+scripts/           build-binaries.ts: standalone executables → dist/
+install.sh         installer: standalone executable (default) or Docker
 ```
 
 Sessions are tmux sessions on a private socket. Metadata (project, worktree, mode, label, task) is stored as tmux
@@ -48,6 +51,19 @@ Without Bun on the host, `./bunx.sh` runs it in the `oven/bun` image:
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
 
+## Build the standalone executable
+
+```bash
+bun run build:bin --host       # this platform only → dist/project-hub-<os>-<arch>
+bun run build:bin              # every release target (Linux x64/arm64 glibc and musl, macOS x64/arm64)
+bun run build:bin linux-arm64  # specific targets
+```
+
+It builds the frontend and compiles `server/src/cli.ts` with `bun build --compile`. A generated entry point embeds
+every `web/dist` file (`server/src/web-embed.ts`), so the executable needs nothing next to it. `web/dist` on disk
+(or `WEB_DIST`) still takes priority when it exists. Test the install script against a local build with
+`HUB_DOWNLOAD_URL=file://$PWD/dist bash install.sh`.
+
 ## Checks
 
 ```bash
@@ -55,7 +71,8 @@ bun run typecheck
 bun test server
 ```
 
-CI runs both, builds the frontend and the image. Tagging `vX.Y.Z` publishes a multi-arch image to GHCR.
+CI runs both, builds the frontend and the image, and smoke-tests a standalone executable. Tagging `vX.Y.Z` publishes a
+multi-arch image to GHCR and attaches the executables plus `SHA256SUMS` to the GitHub release.
 
 ## Agent skill
 
