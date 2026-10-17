@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +52,8 @@ export function SessionActions({ session, onOpen }: { session: Session; onOpen?:
   const restart = useRestartSession();
   const rename = useRenameSession();
   const [confirmKill, setConfirmKill] = useState(false);
+  const [removeWorktree, setRemoveWorktree] = useState(false);
+  const [deleteBranch, setDeleteBranch] = useState(false);
   const [renaming, setRenaming] = useState(false);
   return (
     <>
@@ -80,7 +83,14 @@ export function SessionActions({ session, onOpen }: { session: Session; onOpen?:
             <RotateCw /> {session.mode === "bash" ? "Restart" : "Restart (continue conversation)"}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onClick={() => setConfirmKill(true)}>
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => {
+              setRemoveWorktree(false);
+              setDeleteBranch(false);
+              setConfirmKill(true);
+            }}
+          >
             <Square /> Stop session
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -92,8 +102,28 @@ export function SessionActions({ session, onOpen }: { session: Session; onOpen?:
         description={`The process in "${session.label}" (${session.project}${session.worktree ? `@${session.worktree}` : ""}) will be stopped. The conversation is kept and can be continued later.`}
         confirmLabel="Stop"
         destructive
-        onConfirm={() => kill.mutate(session.name)}
-      />
+        onConfirm={() => kill.mutate({ name: session.name, removeWorktree, deleteBranch: removeWorktree && deleteBranch })}
+      >
+        {session.worktree && (
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={removeWorktree} onCheckedChange={(v) => setRemoveWorktree(v === true)} />
+              Also remove worktree <span className="font-mono">{session.worktree}</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={removeWorktree && deleteBranch}
+                disabled={!removeWorktree}
+                onCheckedChange={(v) => setDeleteBranch(v === true)}
+              />
+              Also delete its branch (only if merged)
+            </label>
+            <p className="text-xs text-muted-foreground">
+              The worktree is kept if it has uncommitted changes or other sessions still run in it.
+            </p>
+          </div>
+        )}
+      </ConfirmDialog>
       <PromptDialog
         open={renaming}
         onOpenChange={setRenaming}

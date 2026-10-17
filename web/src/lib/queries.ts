@@ -69,11 +69,18 @@ export function useStartSession() {
 
 export function useKillSession() {
   const invalidate = useInvalidate();
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => unwrap(api.sessions({ name }).delete()),
-    onSuccess: () => {
-      toast.success("Session stopped");
+    mutationFn: ({ name, ...query }: { name: string; removeWorktree?: boolean; deleteBranch?: boolean }) =>
+      unwrap(api.sessions({ name }).delete(undefined, { query })),
+    onSuccess: (r) => {
+      if (r.worktreeError) toast.warning(`Session stopped, worktree kept: ${r.worktreeError}`, { duration: 10_000 });
+      else if (r.branchError) toast.warning(`Session stopped, worktree removed, branch kept: ${r.branchError}`, { duration: 10_000 });
+      else toast.success(r.worktreeRemoved ? "Session stopped, worktree removed" : "Session stopped");
       invalidate();
+      if (r.worktreeRemoved) {
+        for (const key of ["worktrees", "git", "git-branches", "files"]) qc.invalidateQueries({ queryKey: [key] });
+      }
     },
     onError,
   });

@@ -17,7 +17,7 @@ import {
   stopSession,
   tailLines,
 } from "./tmux";
-import { createWorktree } from "./worktrees";
+import { createWorktree, removeWorktree } from "./worktrees";
 
 /** A session runs an agent from AGENTS (by id), Claude remote control ("rc"), or a plain shell ("bash"). */
 export type Mode = string;
@@ -268,11 +268,23 @@ export const sessionRoutes = new Elysia({ prefix: "/api/sessions" })
     },
     { body: t.Object({ label: t.String({ minLength: 1, maxLength: 60 }) }) },
   )
-  .delete("/:name", async ({ params }) => {
-    const s = await requireSession(params.name);
-    if (s.mode === "rc" && !s.dead) await stopSession(s.name, s.pid);
-    else await killSession(s.name);
-    db.query("UPDATE sessions SET ended_at = ? WHERE name = ?").run(Date.now(), s.name);
-    logActivity("session_kill", `${s.project} ${s.mode}`);
-    return { ok: true };
-  });
+  .delete(
+    "/:name",
+    async ({ params, query }) => {
+      const s = await requireSession(params.name);
+      if (s.mode === "rc" && !s.dead) await stopSession(s.name, s.pid);
+      else await killSession(s.name);
+      db.query("UPDATE sessions SET ended_at = ? WHERE name = ?").run(Date.now(), s.name);
+      logActivity("session_kill", `${s.project} ${s.mode}`);
+      const result = { ok: true, worktreeRemoved: false, worktreeError: null as string | null, branchError: null as string | null };
+      if (!query.removeWorktree || !s.worktree) return result;
+      // Never forced: a worktree with uncommitted changes or other sessions is kept; the session is stopped anyway.
+      try {
+        const r = await removeWorktree(s.project, s.worktree, { deleteBranch: query.deleteBranch });
+        return { ...result, worktreeRemoved: true, branchError: r.branchError };
+      } catch (e) {
+        return { ...result, worktreeError: (e as Error).message };
+      }
+    },
+    { query: t.Object({ removeWorktree: t.Optional(t.BooleanString()), deleteBranch: t.Optional(t.BooleanString()) }) },
+  );

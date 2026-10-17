@@ -29,6 +29,8 @@ export function ConfirmDialog(props: {
   confirmLabel?: string;
   destructive?: boolean;
   onConfirm: () => void;
+  /** Extra options shown above the buttons. */
+  children?: ReactNode;
 }) {
   return (
     <AlertDialog open={props.open} onOpenChange={props.onOpenChange}>
@@ -37,6 +39,7 @@ export function ConfirmDialog(props: {
           <AlertDialogTitle>{props.title}</AlertDialogTitle>
           {props.description && <AlertDialogDescription>{props.description}</AlertDialogDescription>}
         </AlertDialogHeader>
+        {props.children}
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction

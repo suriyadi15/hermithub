@@ -23,7 +23,9 @@ Worktrees need a git repository with at least one commit.
      `git merge <branch>` in the project folder). Resolve any conflicts in the project folder's Git panel.
 5. **Clean up.** Stop the worktree's sessions, then click **Remove** in the worktrees panel. Tick
    **Also delete branch** once it is merged. Git refuses to remove a worktree with uncommitted changes
-   unless you tick **Force**.
+   unless you tick **Force**. Shortcut: when stopping a worktree's last session, tick **Also remove worktree**
+   (and optionally **Also delete its branch**) in the Stop dialog. That never forces, so a worktree with
+   uncommitted changes, or one other sessions still run in, is kept and you get a warning.
 
 **Resume** works per worktree: agents continue the last conversation of the folder they run in.
 

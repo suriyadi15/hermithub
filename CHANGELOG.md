@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Stop session** on a session in a worktree can remove the worktree too (and its branch once merged), so a
+  finished task is cleaned up in one step. Worktrees with uncommitted changes or other sessions are kept.
+
 ## 0.4.0 — 2026-10-17
 
 - **Worktrees for parallel tasks.** **+ Session → Run in → New worktree** creates a separate folder and
