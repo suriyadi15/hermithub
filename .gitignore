@@ -1,0 +1,8 @@
+node_modules
+web/dist
+.env
+*.db
+*.db-*
+.data
+/data
+docker-compose.override.yml

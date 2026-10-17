@@ -1,0 +1,16 @@
+{
+  "name": "project-hub",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "workspaces": ["server", "web"],
+  "scripts": {
+    "dev:server": "bun --watch server/src/index.ts",
+    "dev:web": "bun run --cwd web dev",
+    "build": "bun run --cwd web build",
+    "start": "bun server/src/index.ts",
+    "test": "bun test server",
+    "typecheck": "bun run --cwd web tsc -p ../server --noEmit && bun run --cwd web tsc -p . --noEmit",
+    "set-password": "bun server/scripts/set-password.ts"
+  }
+}

@@ -1,0 +1,50 @@
+# Project Hub — self-contained: everything (projects, agent logins, GitHub login, database)
+# lives under ./data next to this file. Nothing needs to be installed on the host besides Docker.
+name: project-hub
+
+services:
+  project-hub:
+    image: ${HUB_IMAGE:-ghcr.io/suriyadi15/project-hub}:${HUB_VERSION:-latest}
+    container_name: project-hub
+    hostname: project-hub
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-}
+      # GitHub auth goes through `gh` over HTTPS, so let SSH-style URLs (git@github.com:user/repo)
+      # use it too instead of failing for lack of an SSH key.
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: "url.https://github.com/.insteadOf"
+      GIT_CONFIG_VALUE_0: "git@github.com:"
+    ports:
+      # Localhost only by default. Use HUB_DOMAIN (built-in HTTPS), a reverse proxy, or a tunnel to
+      # reach it from elsewhere; see docs/reverse-proxy.md.
+      - "${HUB_BIND:-127.0.0.1}:${HUB_PORT:-8787}:8787"
+    volumes:
+      # Home of the `hub` user: installed agents (~/.local), their logins (~/.claude, ~/.codex,
+      # ~/.gemini), GitHub CLI login, git config and SSH keys.
+      - ${HUB_DATA:-./data}/home:/home/hub
+      - ${HUB_PROJECTS:-./data/projects}:/home/hub/projects
+      - ${HUB_DATA:-./data}/db:/data
+    # Optional: cap memory for everything running inside (agent sessions included).
+    # mem_limit: 6g
+
+  # Optional HTTPS with automatic Let's Encrypt certificates. Enabled with
+  # `COMPOSE_PROFILES=https` and `HUB_DOMAIN=hub.example.com` in .env (install.sh --domain does this).
+  caddy:
+    image: caddy:2
+    profiles: ["https"]
+    restart: unless-stopped
+    command: caddy reverse-proxy --from ${HUB_DOMAIN:-localhost} --to project-hub:8787
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ${HUB_DATA:-./data}/caddy:/data
+    depends_on:
+      - project-hub

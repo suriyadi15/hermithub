@@ -1,0 +1,9 @@
+# Build the image from this checkout instead of pulling it:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+services:
+  project-hub:
+    image: project-hub:dev
+    build:
+      context: .
+      args:
+        VERSION: dev

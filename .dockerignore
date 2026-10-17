@@ -1,0 +1,10 @@
+node_modules
+**/node_modules
+web/dist
+.git
+.env
+*.db
+.data
+bunx.sh
+/data
+docker-compose.override.yml
