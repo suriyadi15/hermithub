@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { GitBranch, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Eye, EyeOff, GitBranch, MoreVertical, Pencil, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { api, unwrap, type Project, type SessionMode } from "@/lib/api";
 import { ago } from "@/lib/format";
 import { useModes } from "@/lib/modes";
+import { cn } from "@/lib/utils";
 import { ConfirmDialog, PromptDialog } from "./dialogs";
 import { NewSessionDialog } from "./NewSessionDialog";
 
@@ -44,6 +45,21 @@ export function ProjectCard({ project }: { project: Project }) {
     },
     onError: (e) => toast.error(e.message),
   });
+  const flags = useMutation({
+    mutationFn: (body: { favorite?: boolean; hidden?: boolean }) =>
+      unwrap(api.projects({ project: project.name }).flags.put(body)),
+    onSuccess: (_, body) => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      if (body.hidden) {
+        toast.success(`"${project.name}" hidden`, {
+          action: { label: "Undo", onClick: () => flags.mutate({ hidden: false }) },
+        });
+      } else if (body.hidden === false) {
+        toast.success(`"${project.name}" is visible again`);
+      }
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const git = project.git;
   // Up to three agents plus a terminal; remote control and the rest are in the session dialog.
@@ -51,17 +67,35 @@ export function ProjectCard({ project }: { project: Project }) {
   const quick = [...modes.filter((m) => m.agent && m.mode !== "rc").slice(0, 3), ...modes.filter((m) => m.mode === "bash")];
 
   return (
-    <div className="group flex min-w-0 flex-col rounded-xl border bg-card p-3 transition-colors hover:border-primary/40 sm:p-4">
+    <div
+      className={cn(
+        "group flex min-w-0 flex-col rounded-xl border bg-card p-3 transition-colors hover:border-primary/40 sm:p-4",
+        project.hidden && "border-dashed opacity-60 hover:opacity-100",
+      )}
+    >
       <div className="flex items-start gap-2">
         <Link to={`/p/${encodeURIComponent(project.name)}`} className="min-w-0 flex-1">
           <h3 className="truncate font-semibold group-hover:text-primary">{project.name}</h3>
           <p className="text-xs text-muted-foreground">modified {ago(project.modified)}</p>
         </Link>
+        {project.hidden && <Badge variant="outline">hidden</Badge>}
         {project.sessions.running > 0 && (
           <Badge variant="outline" className="border-success/40 bg-success/10 text-success">
             {project.sessions.running} running
           </Badge>
         )}
+        <Button
+          size="icon"
+          variant="ghost"
+          className={cn("-mt-1 size-9 sm:size-8", project.favorite ? "text-warning" : "text-muted-foreground")}
+          aria-label={project.favorite ? "Remove from favorites" : "Add to favorites"}
+          aria-pressed={project.favorite}
+          title={project.favorite ? "Remove from favorites" : "Add to favorites"}
+          disabled={flags.isPending}
+          onClick={() => flags.mutate({ favorite: !project.favorite })}
+        >
+          <Star className={cn("size-4", project.favorite && "fill-current")} />
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="icon" variant="ghost" className="-mr-1.5 -mt-1 size-9 sm:size-8">
@@ -71,6 +105,17 @@ export function ProjectCard({ project }: { project: Project }) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setRenaming(true)}>
               <Pencil /> Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => flags.mutate({ hidden: !project.hidden })}>
+              {project.hidden ? (
+                <>
+                  <Eye /> Unhide
+                </>
+              ) : (
+                <>
+                  <EyeOff /> Hide
+                </>
+              )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={() => setDeleting(true)}>

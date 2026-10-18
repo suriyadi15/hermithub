@@ -34,6 +34,11 @@ CREATE TABLE IF NOT EXISTS activity (
   action TEXT NOT NULL,
   detail TEXT
 );
+CREATE TABLE IF NOT EXISTS project_flags (
+  name TEXT PRIMARY KEY,
+  favorite INTEGER NOT NULL DEFAULT 0,
+  hidden INTEGER NOT NULL DEFAULT 0
+);
 `);
 
 // Added in 0.4: the git worktree a session ran in ("" or NULL = the project folder).

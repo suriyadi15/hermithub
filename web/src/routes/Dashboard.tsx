@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Bot, Cpu, FolderGit2, HardDrive, MemoryStick, Plus, Search } from "lucide-react";
+import { Activity, Bot, Cpu, Eye, EyeOff, FolderGit2, HardDrive, MemoryStick, Plus, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { NewProjectDialog } from "@/components/NewProjectDialog";
@@ -8,7 +8,7 @@ import { SessionCard } from "@/components/SessionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { api, unwrap } from "@/lib/api";
+import { api, unwrap, type Project } from "@/lib/api";
 import { bytes } from "@/lib/format";
 import { POLL_MS, useAgents, useProjects, useSessions } from "@/lib/queries";
 
@@ -41,6 +41,26 @@ function Stat({ icon: Icon, label, value, sub, pct }: { icon: typeof Cpu; label:
   );
 }
 
+const SHOW_HIDDEN_KEY = "hub:show-hidden-projects";
+
+function readShowHidden() {
+  try {
+    return localStorage.getItem(SHOW_HIDDEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function ProjectGrid({ projects }: { projects: Project[] }) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {projects.map((p) => (
+        <ProjectCard key={p.name} project={p} />
+      ))}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const now = useNow();
@@ -49,11 +69,28 @@ export default function Dashboard() {
   const stats = useQuery({ queryKey: ["stats"], queryFn: () => unwrap(api.stats.get()), refetchInterval: POLL_MS * 2 });
   const [filter, setFilter] = useState("");
   const [creating, setCreating] = useState(false);
+  const [showHidden, setShowHidden] = useState(readShowHidden);
+  const toggleHidden = () => {
+    const next = !showHidden;
+    setShowHidden(next);
+    try {
+      localStorage.setItem(SHOW_HIDDEN_KEY, next ? "1" : "0");
+    } catch {
+      // Private mode / blocked storage: the toggle just isn't remembered.
+    }
+  };
 
+  const hiddenCount = projects.data?.filter((p) => p.hidden).length ?? 0;
+  // Hidden projects stay out of the list unless shown on purpose; a search still finds them.
   const shown = useMemo(
-    () => (projects.data ?? []).filter((p) => p.name.toLowerCase().includes(filter.toLowerCase())),
-    [projects.data, filter],
+    () =>
+      (projects.data ?? []).filter(
+        (p) => p.name.toLowerCase().includes(filter.toLowerCase()) && (!p.hidden || showHidden || filter !== ""),
+      ),
+    [projects.data, filter, showHidden],
   );
+  const favorites = shown.filter((p) => p.favorite);
+  const others = shown.filter((p) => !p.favorite);
   const running = sessions.data?.filter((s) => s.status !== "exited").length ?? 0;
   const s = stats.data;
   const agents = useAgents();
@@ -140,6 +177,18 @@ export default function Dashboard() {
               onChange={(e) => setFilter(e.target.value)}
             />
           </div>
+          {hiddenCount > 0 && (
+            <Button
+              variant="ghost"
+              className="h-10 sm:h-9"
+              aria-pressed={showHidden}
+              aria-label={showHidden ? "Hide hidden projects" : `Show ${hiddenCount} hidden projects`}
+              onClick={toggleHidden}
+            >
+              {showHidden ? <EyeOff /> : <Eye />}
+              <span className="hidden min-[400px]:inline">{showHidden ? "Hide hidden" : `Hidden (${hiddenCount})`}</span>
+            </Button>
+          )}
           <Button className="h-10 sm:h-9" aria-label="New project" onClick={() => setCreating(true)}>
             <Plus /> <span className="hidden min-[400px]:inline">New project</span>
           </Button>
@@ -151,10 +200,29 @@ export default function Dashboard() {
             ))}
           </div>
         ) : shown.length ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {shown.map((p) => (
-              <ProjectCard key={p.name} project={p} />
-            ))}
+          favorites.length ? (
+            <div className="space-y-5">
+              <div>
+                <h3 className="mb-2 text-sm font-medium text-muted-foreground">Favorites</h3>
+                <ProjectGrid projects={favorites} />
+              </div>
+              {others.length > 0 && (
+                <div>
+                  <h3 className="mb-2 text-sm font-medium text-muted-foreground">All projects</h3>
+                  <ProjectGrid projects={others} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <ProjectGrid projects={shown} />
+          )
+        ) : !filter && hiddenCount > 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
+            <EyeOff className="size-8" />
+            All projects are hidden.
+            <Button variant="secondary" onClick={toggleHidden}>
+              <Eye /> Show hidden
+            </Button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">

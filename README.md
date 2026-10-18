@@ -11,7 +11,8 @@ Agents, their logins, GitHub access and git settings are all set up from the das
 
 ## Features
 
-- **Projects**: create (empty folder, `git init` or `git clone`), rename, move to trash, restore.
+- **Projects**: create (empty folder, `git init` or `git clone`), rename, move to trash, restore. Star favorites to
+  keep them at the top; hide projects you no longer use and bring them back any time.
 - **Agent sessions**, several at once per project, in a web terminal (tmux under the hood):
   - Claude Code, Codex CLI, Gemini CLI, OpenCode, GitHub Copilot CLI, Qwen Code, Crush — pick a permission
     mode per session, continue the last conversation.

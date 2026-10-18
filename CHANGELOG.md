@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Favorite and hide projects.** Star a project on the Dashboard to pin it in a "Favorites" group at the top.
+  Hide projects you no longer touch from the card menu (with Undo); "Hidden (N)" next to the search box shows
+  them again, and searching always finds them. Both flags are stored on the server, so every browser sees the
+  same list, and they follow a project through rename and trash/restore.
+
 ## 0.6.1 — 2026-10-18
 
 - **Website and docs** at [hermithub.pages.dev](https://hermithub.pages.dev): a landing page with screenshots and

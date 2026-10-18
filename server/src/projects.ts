@@ -1,7 +1,7 @@
 import { mkdir, readdir, rename, rm, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { Elysia, t } from "elysia";
-import { logActivity } from "./db";
+import { db, logActivity } from "./db";
 import { exec, HttpError } from "./exec";
 import { git, GIT_ENV, gitSummary } from "./git";
 import { isDir, PROJECTS_DIR, projectRoot, projectWorktreesDir, TRASH_DIR, validateName } from "./paths";
@@ -15,18 +15,26 @@ async function exists(p: string) {
   );
 }
 
+type FlagRow = { name: string; favorite: number; hidden: number };
+
 export async function listProjects() {
   const entries = await readdir(PROJECTS_DIR, { withFileTypes: true }).catch(() => []);
   const sessions = await listSessions();
+  const flags = new Map(
+    db.query<FlagRow, []>("SELECT name, favorite, hidden FROM project_flags").all().map((r) => [r.name, r]),
+  );
   const dirs = entries.filter((e) => e.isDirectory() && !e.name.startsWith("."));
   const projects = await Promise.all(
     dirs.map(async (e) => {
       const dir = join(PROJECTS_DIR, e.name);
       const [st, summary, worktrees] = await Promise.all([stat(dir), gitSummary(dir), worktreeCount(e.name)]);
       const own = sessions.filter((s) => s.project === e.name);
+      const f = flags.get(e.name);
       return {
         name: e.name,
         modified: st.mtimeMs,
+        favorite: !!f?.favorite,
+        hidden: !!f?.hidden,
         git: summary,
         worktrees,
         sessions: { total: own.length, running: own.filter((s) => !s.dead).length },
@@ -87,8 +95,27 @@ export async function renameProject(from: string, to: string) {
     const dirs = (await readdir(wtTo, { withFileTypes: true })).filter((e) => e.isDirectory());
     if (dirs.length) await git(dst, "worktree", "repair", ...dirs.map((e) => join(wtTo, e.name)));
   }
+  db.query("UPDATE project_flags SET name = ? WHERE name = ?").run(to, from);
   logActivity("project_rename", `${from} → ${to}`);
   return { name: to };
+}
+
+/** Favorite / hidden live in the DB, keyed by folder name; they survive trash + restore under the same name. */
+export async function setProjectFlags(name: string, flags: { favorite?: boolean; hidden?: boolean }) {
+  if (!(await isDir(projectRoot(name)))) throw new HttpError(404, "Project not found");
+  const cur = db.query<FlagRow, [string]>("SELECT name, favorite, hidden FROM project_flags WHERE name = ?").get(name);
+  const favorite = flags.favorite ?? !!cur?.favorite;
+  const hidden = flags.hidden ?? !!cur?.hidden;
+  if (favorite || hidden) {
+    db.query(
+      "INSERT INTO project_flags (name, favorite, hidden) VALUES (?, ?, ?) ON CONFLICT(name) DO UPDATE SET favorite = excluded.favorite, hidden = excluded.hidden",
+    ).run(name, favorite ? 1 : 0, hidden ? 1 : 0);
+  } else {
+    db.query("DELETE FROM project_flags WHERE name = ?").run(name);
+  }
+  if (flags.favorite !== undefined) logActivity(favorite ? "project_favorite" : "project_unfavorite", name);
+  if (flags.hidden !== undefined) logActivity(hidden ? "project_hide" : "project_unhide", name);
+  return { name, favorite, hidden };
 }
 
 export async function trashProject(name: string) {
@@ -149,6 +176,9 @@ export const projectRoutes = new Elysia({ prefix: "/api/projects" })
   })
   .patch("/:project", ({ params, body }) => renameProject(params.project, body.name), {
     body: t.Object({ name: t.String({ maxLength: 64 }) }),
+  })
+  .put("/:project/flags", ({ params, body }) => setProjectFlags(params.project, body), {
+    body: t.Object({ favorite: t.Optional(t.Boolean()), hidden: t.Optional(t.Boolean()) }),
   })
   .delete("/:project", ({ params }) => trashProject(params.project))
   .get("/trash/list", () => listTrash())
