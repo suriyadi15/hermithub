@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 — 2026-10-18
 
 - **Favorite and hide projects.** Star a project on the Dashboard to pin it in a "Favorites" group at the top.
   Hide projects you no longer touch from the card menu (with Undo); "Hidden (N)" next to the search box shows
