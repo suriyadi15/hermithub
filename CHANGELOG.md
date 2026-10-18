@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.0 — 2026-10-18
 
 - **New logo**: a hermit crab in its shell, in the dashboard, the website and the catalog assets in
   `deploy/assets/`.
