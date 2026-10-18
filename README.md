@@ -9,7 +9,8 @@ Agents, their logins, GitHub access and git settings are all set up from the das
 
 **Website and docs: [hermithub.pages.dev](https://hermithub.pages.dev)**
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/suriyadi15)
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/suriyadi15)
+[![Trakteer](https://img.shields.io/badge/Trakteer-support-BE1E2D)](https://trakteer.id/suriyadi15/tip)
 
 ## Features
 
