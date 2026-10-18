@@ -5,7 +5,7 @@ import { HttpError } from "./exec";
 
 export const HOME = process.env.HOME ?? "/root";
 export const PROJECTS_DIR = resolve(process.env.PROJECTS_DIR ?? join(process.env.HOME ?? "/root", "projects"));
-export const DATA_DIR = resolve(process.env.DATA_DIR ?? join(process.env.HOME ?? "/root", ".project-hub"));
+export const DATA_DIR = resolve(process.env.DATA_DIR ?? join(process.env.HOME ?? "/root", ".hermithub"));
 /** Trash lives inside PROJECTS_DIR so moving a project there is an atomic rename on the same filesystem. */
 export const TRASH_DIR = join(PROJECTS_DIR, ".hub-trash");
 /** Git worktrees of a project live in WORKTREES_DIR/<project>/<worktree>, hidden from the project list. */

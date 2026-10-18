@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **Project Hub is now HermitHub.** The repository is `suriyadi15/hermithub`, the command `hermithub`, the image
+  `ghcr.io/suriyadi15/hermithub`, the data folder `~/.hermithub`, the settings `~/.config/hermithub`, the service
+  `hermithub` (launchd: `dev.hermithub`) and the agent skill `hermithub`. Existing installs move over by
+  themselves on their first start after the update, and the old paths stay as symlinks. Releases still include
+  `project-hub-<target>` and the image is still published as `ghcr.io/suriyadi15/project-hub`, so older versions
+  can update. See [docs/installation.md](docs/installation.md#installs-from-before-the-rename).
+
 ## 0.5.0 — 2026-10-17
 
 - **Install without Docker.** Each release now ships a standalone `project-hub` executable for Linux (x64/arm64,

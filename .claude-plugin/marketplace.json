@@ -1,14 +1,14 @@
 {
-  "name": "project-hub",
-  "description": "Agent skill for installing and operating Project Hub",
+  "name": "hermithub",
+  "description": "Agent skill for installing and operating HermitHub",
   "owner": {
     "name": "Suriyadi"
   },
   "plugins": [
     {
-      "name": "project-hub",
-      "source": "./skills/project-hub",
-      "description": "Install, update, configure and troubleshoot Project Hub, the self-hosted dashboard for AI coding agents"
+      "name": "hermithub",
+      "source": "./skills/hermithub",
+      "description": "Install, update, configure and troubleshoot HermitHub, the self-hosted dashboard for AI coding agents"
     }
   ]
 }

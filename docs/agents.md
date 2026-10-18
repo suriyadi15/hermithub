@@ -1,6 +1,6 @@
 # Agents
 
-Project Hub runs AI coding agents as interactive terminal programs in your projects. Supported out of the box:
+HermitHub runs AI coding agents as interactive terminal programs in your projects. Supported out of the box:
 
 | Agent | Installed with | Login | API key |
 |---|---|---|---|

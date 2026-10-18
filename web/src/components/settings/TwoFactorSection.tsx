@@ -39,7 +39,7 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
           onClick={() => {
             const a = document.createElement("a");
             a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
-            a.download = "project-hub-recovery-codes.txt";
+            a.download = "hermithub-recovery-codes.txt";
             a.click();
             URL.revokeObjectURL(a.href);
           }}

@@ -99,7 +99,7 @@ export async function start() {
   await applyGlobalOptions(); // no-op when no tmux server is running yet
   startUpdateScheduler();
   app.listen({ port: PORT, hostname: HOST, idleTimeout: 120 });
-  console.log(`Project Hub on http://${HOST}:${PORT} — projects: ${PROJECTS_DIR}`);
+  console.log(`HermitHub on http://${HOST}:${PORT} — projects: ${PROJECTS_DIR}`);
   if (token) {
     const origin = (process.env.PUBLIC_ORIGIN ?? "").split(",")[0]?.trim() || `http://localhost:${PORT}`;
     console.log(`\nFirst run: create your password at\n  ${origin}/setup?token=${token}\n`);

@@ -37,7 +37,7 @@ export default function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
         <div className="flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="size-10" />
           <div>
-            <h1 className="text-lg font-semibold">Project Hub</h1>
+            <h1 className="text-lg font-semibold">HermitHub</h1>
             <p className="text-sm text-muted-foreground">Projects and AI coding agents</p>
           </div>
         </div>

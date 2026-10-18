@@ -23,4 +23,4 @@ bun run build
 ## Reporting bugs
 
 Open an issue with steps to reproduce, the version (Settings → About) and relevant
-`docker compose logs project-hub` output. Security issues: see [SECURITY.md](SECURITY.md).
+`docker compose logs hermithub` output. Security issues: see [SECURITY.md](SECURITY.md).

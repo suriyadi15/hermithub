@@ -24,7 +24,10 @@ jobs:
       - id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          # The second name is the image from before the rename (Project Hub), so existing installs keep updating.
+          images: |
+            ghcr.io/${{ github.repository_owner }}/hermithub
+            ghcr.io/${{ github.repository_owner }}/project-hub
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -58,4 +61,4 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --verify-tag --generate-notes
-          gh release upload "$TAG" dist/project-hub-* dist/SHA256SUMS --clobber
+          gh release upload "$TAG" dist/hermithub-* dist/project-hub-* dist/SHA256SUMS --clobber

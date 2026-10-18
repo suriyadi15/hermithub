@@ -5,7 +5,7 @@
 ```
 server/            Bun + Elysia backend
   src/index.ts     app, auth guard, static files
-  src/cli.ts       `project-hub` executable: serve, set-password, disable-2fa, doctor, version
+  src/cli.ts       `hermithub` executable: serve, set-password, disable-2fa, doctor, version
   src/agents.ts    agent registry (install, login, launch) + /api/agents
   src/sessions.ts  project sessions (tmux) + /api/sessions
   src/tasks.ts     system tasks: installs and logins in tmux + /api/tasks
@@ -54,7 +54,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ## Build the standalone executable
 
 ```bash
-bun run build:bin --host       # this platform only → dist/project-hub-<os>-<arch>
+bun run build:bin --host       # this platform only → dist/hermithub-<os>-<arch>
 bun run build:bin              # every release target (Linux x64/arm64 glibc and musl, macOS x64/arm64)
 bun run build:bin linux-arm64  # specific targets
 ```
@@ -76,7 +76,7 @@ multi-arch image to GHCR and attaches the executables plus `SHA256SUMS` to the G
 
 ## Agent skill
 
-`skills/project-hub/SKILL.md` documents the installer for AI agents. When installer flags, `.env` options or
+`skills/hermithub/SKILL.md` documents the installer for AI agents. When installer flags, `.env` options or
 operating commands change, update it (and `references/troubleshooting.md`), then check it with
 `claude plugin validate --strict .`.
 

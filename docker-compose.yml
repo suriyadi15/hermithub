@@ -1,12 +1,12 @@
-# Project Hub — self-contained: everything (projects, agent logins, GitHub login, database)
+# HermitHub — self-contained: everything (projects, agent logins, GitHub login, database)
 # lives under ./data next to this file. Nothing needs to be installed on the host besides Docker.
-name: project-hub
+name: hermithub
 
 services:
-  project-hub:
-    image: ${HUB_IMAGE:-ghcr.io/suriyadi15/project-hub}:${HUB_VERSION:-latest}
-    container_name: project-hub
-    hostname: project-hub
+  hermithub:
+    image: ${HUB_IMAGE:-ghcr.io/suriyadi15/hermithub}:${HUB_VERSION:-latest}
+    container_name: hermithub
+    hostname: hermithub
     restart: unless-stopped
     env_file:
       - path: .env
@@ -41,7 +41,7 @@ services:
     image: caddy:2
     profiles: ["https"]
     restart: unless-stopped
-    command: caddy reverse-proxy --from ${HUB_DOMAIN:-localhost} --to project-hub:8787
+    command: caddy reverse-proxy --from ${HUB_DOMAIN:-localhost} --to hermithub:8787
     ports:
       - "80:80"
       - "443:443"
@@ -49,4 +49,4 @@ services:
     volumes:
       - ${HUB_DATA:-./data}/caddy:/data
     depends_on:
-      - project-hub
+      - hermithub

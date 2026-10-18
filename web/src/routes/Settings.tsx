@@ -148,7 +148,7 @@ export default function Settings() {
         </ul>
       </Section>
 
-      <Section title="Updates" description="New releases of Project Hub.">
+      <Section title="Updates" description="New releases of HermitHub.">
         <UpdatesSection />
       </Section>
 

@@ -1,6 +1,6 @@
 # Security
 
-Project Hub is a remote shell with a web UI. Anyone who logs in can run any command in the container (Docker)
+HermitHub is a remote shell with a web UI. Anyone who logs in can run any command in the container (Docker)
 or as your user account (standalone executable), and read everything there — your projects, agent credentials,
 GitHub token and SSH key. Treat the password like an SSH key.
 
@@ -48,7 +48,7 @@ GitHub token and SSH key. Treat the password like an SSH key.
 Log in with a recovery code. If you have none left, turn two-factor authentication off from the server:
 
 ```bash
-docker compose exec -u hub project-hub bun run disable-2fa
+docker compose exec -u hub hermithub bun run disable-2fa
 ```
 
 ## Reporting vulnerabilities

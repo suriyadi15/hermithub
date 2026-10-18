@@ -78,7 +78,7 @@ export const integrationRoutes = new Elysia({ prefix: "/api/integrations" })
   .post("/ssh", async () => {
     if (existsSync(SSH_KEY)) throw new HttpError(409, "An SSH key already exists");
     await mkdir(join(HOME, ".ssh"), { recursive: true, mode: 0o700 });
-    const r = await exec(["ssh-keygen", "-t", "ed25519", "-N", "", "-C", "project-hub", "-f", SSH_KEY]);
+    const r = await exec(["ssh-keygen", "-t", "ed25519", "-N", "", "-C", "hermithub", "-f", SSH_KEY]);
     if (r.code !== 0) throw new HttpError(500, r.stderr.trim() || "ssh-keygen failed");
     logActivity("ssh_key_created");
     return { publicKey: (await readFile(SSH_KEY + ".pub", "utf8")).trim() };

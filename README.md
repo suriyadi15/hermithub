@@ -1,4 +1,4 @@
-# Project Hub
+# HermitHub
 
 A self-hosted web dashboard for your code projects and AI coding agents — **Claude Code**, **Codex CLI**,
 **Gemini CLI**, **OpenCode**, **GitHub Copilot CLI** and more — installed as a single executable on Linux or macOS,
@@ -30,7 +30,7 @@ The browser talks to a small Bun server, and every agent runs inside a tmux sess
 running when you close the tab. The server runs either as a standalone executable (a user service on your machine)
 or in a Docker container; the diagram shows the Docker setup.
 
-![Project Hub architecture](https://mermaid.ink/img/Zmxvd2NoYXJ0IFRCCiAgICB1c2VyWyJCcm93c2VyIC8gcGhvbmU8YnIvPlJlYWN0IFVJIMK3IHh0ZXJtLmpzIMK3IE1vbmFjbyJdCiAgICBjYWRkeVsiQ2FkZHkgKG9wdGlvbmFsKTxici8-SFRUUFMgZm9yIC0tZG9tYWluIl0KCiAgICBzdWJncmFwaCBjb250YWluZXJbIkRvY2tlciBjb250YWluZXIiXQogICAgICAgIHNlcnZlclsiUHJvamVjdCBIdWIgc2VydmVyIMK3IEJ1biArIEVseXNpYSDCtyA6ODc4Nzxici8-cGFzc3dvcmQgbG9naW4gKyBvcmlnaW4gY2hlY2siXQogICAgICAgIGFwaVsiUkVTVCAvYXBpLyo8YnIvPnByb2plY3RzIMK3IGZpbGVzIMK3IGdpdCDCtyBzZWFyY2g8YnIvPnNlc3Npb25zIMK3IGFnZW50cyDCtyBzZXR0aW5ncyJdCiAgICAgICAgd3NbIldlYlNvY2tldCAvd3MvdGVybS86bmFtZTxici8-bGl2ZSB0ZXJtaW5hbCJdCiAgICAgICAgdG11eFsidG11eCAocHJpdmF0ZSBzb2NrZXQpPGJyLz5vbmUgdG11eCBzZXNzaW9uIHBlciBhZ2VudCBzZXNzaW9uIl0KICAgICAgICBhZ2VudHNbIkNsYXVkZSBDb2RlIMK3IENvZGV4IENMSTxici8-R2VtaW5pIENMSSDCtyBiYXNoIl0KICAgIGVuZAoKICAgIHN1YmdyYXBoIGRhdGFbIi4vZGF0YSBvbiB0aGUgaG9zdCJdCiAgICAgICAgcHJvamVjdHNbKCJwcm9qZWN0cy88YnIvPnlvdXIgY29kZSIpXQogICAgICAgIGhvbWVbKCJob21lLzxici8-YWdlbnRzLCBsb2dpbnMsPGJyLz5naXQgJiBTU0ggY29uZmlnIildCiAgICAgICAgZGJbKCJkYi88YnIvPlNRTGl0ZSIpXQogICAgZW5kCgogICAgY2xvdWRbIkFJIHByb3ZpZGVycyDCtyBHaXRIdWI8YnIvPm90aGVyIGdpdCBzZXJ2ZXJzIl0KCiAgICB1c2VyIC0tICJIVFRQUyIgLS0-IGNhZGR5CiAgICBjYWRkeSAtLT4gc2VydmVyCiAgICB1c2VyIC0uICJsb2NhbGhvc3QgLyB0dW5uZWwiIC4tPiBzZXJ2ZXIKICAgIHNlcnZlciAtLT4gYXBpCiAgICBzZXJ2ZXIgLS0-IHdzCiAgICBhcGkgLS0gInN0YXJ0IC8gc3RvcCAvIHN0YXR1cyIgLS0-IHRtdXgKICAgIHdzIC0tICJhdHRhY2ggKFBUWSkiIC0tPiB0bXV4CiAgICB0bXV4IC0tPiBhZ2VudHMKICAgIGFwaSAtLT4gZGIKICAgIGFwaSAtLT4gcHJvamVjdHMKICAgIGFnZW50cyAtLT4gcHJvamVjdHMKICAgIGFnZW50cyAtLT4gaG9tZQogICAgYWdlbnRzIC0tPiBjbG91ZAo?type=png&bgColor=!white&width=1600)
+![HermitHub architecture](https://mermaid.ink/img/Zmxvd2NoYXJ0IFRCCiAgICB1c2VyWyJCcm93c2VyIC8gcGhvbmU8YnIvPlJlYWN0IFVJIMK3IHh0ZXJtLmpzIMK3IE1vbmFjbyJdCiAgICBjYWRkeVsiQ2FkZHkgKG9wdGlvbmFsKTxici8-SFRUUFMgZm9yIC0tZG9tYWluIl0KCiAgICBzdWJncmFwaCBjb250YWluZXJbIkRvY2tlciBjb250YWluZXIiXQogICAgICAgIHNlcnZlclsiSGVybWl0SHViIHNlcnZlciDCtyBCdW4gKyBFbHlzaWEgwrcgOjg3ODc8YnIvPnBhc3N3b3JkIGxvZ2luICsgb3JpZ2luIGNoZWNrIl0KICAgICAgICBhcGlbIlJFU1QgL2FwaS8qPGJyLz5wcm9qZWN0cyDCtyBmaWxlcyDCtyBnaXQgwrcgc2VhcmNoPGJyLz5zZXNzaW9ucyDCtyBhZ2VudHMgwrcgc2V0dGluZ3MiXQogICAgICAgIHdzWyJXZWJTb2NrZXQgL3dzL3Rlcm0vOm5hbWU8YnIvPmxpdmUgdGVybWluYWwiXQogICAgICAgIHRtdXhbInRtdXggKHByaXZhdGUgc29ja2V0KTxici8-b25lIHRtdXggc2Vzc2lvbiBwZXIgYWdlbnQgc2Vzc2lvbiJdCiAgICAgICAgYWdlbnRzWyJDbGF1ZGUgQ29kZSDCtyBDb2RleCBDTEk8YnIvPkdlbWluaSBDTEkgwrcgYmFzaCJdCiAgICBlbmQKCiAgICBzdWJncmFwaCBkYXRhWyIuL2RhdGEgb24gdGhlIGhvc3QiXQogICAgICAgIHByb2plY3RzWygicHJvamVjdHMvPGJyLz55b3VyIGNvZGUiKV0KICAgICAgICBob21lWygiaG9tZS88YnIvPmFnZW50cywgbG9naW5zLDxici8-Z2l0ICYgU1NIIGNvbmZpZyIpXQogICAgICAgIGRiWygiZGIvPGJyLz5TUUxpdGUiKV0KICAgIGVuZAoKICAgIGNsb3VkWyJBSSBwcm92aWRlcnMgwrcgR2l0SHViPGJyLz5vdGhlciBnaXQgc2VydmVycyJdCgogICAgdXNlciAtLSAiSFRUUFMiIC0tPiBjYWRkeQogICAgY2FkZHkgLS0-IHNlcnZlcgogICAgdXNlciAtLiAibG9jYWxob3N0IC8gdHVubmVsIiAuLT4gc2VydmVyCiAgICBzZXJ2ZXIgLS0-IGFwaQogICAgc2VydmVyIC0tPiB3cwogICAgYXBpIC0tICJzdGFydCAvIHN0b3AgLyBzdGF0dXMiIC0tPiB0bXV4CiAgICB3cyAtLSAiYXR0YWNoIChQVFkpIiAtLT4gdG11eAogICAgdG11eCAtLT4gYWdlbnRzCiAgICBhcGkgLS0-IGRiCiAgICBhcGkgLS0-IHByb2plY3RzCiAgICBhZ2VudHMgLS0-IHByb2plY3RzCiAgICBhZ2VudHMgLS0-IGhvbWUKICAgIGFnZW50cyAtLT4gY2xvdWQK?type=png&bgColor=!white&width=1600)
 
 What happens when you start a session and come back later:
 
@@ -52,11 +52,11 @@ the source layout is described in
 On Linux (x86_64 / arm64) or macOS, no Docker needed:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/suriyadi15/hermithub/main/install.sh | bash
 ```
 
 The installer detects your OS and CPU, installs tmux and git if they are missing (after asking), downloads the
-`project-hub` executable to `~/.local/bin` and runs it as a user service (systemd on Linux, launchd on macOS). Then
+`hermithub` executable to `~/.local/bin` and runs it as a user service (systemd on Linux, launchd on macOS). Then
 it prints a link like `http://localhost:8787/setup?token=…`. Open it, choose a password, then go to **Settings**
 to install an agent and connect GitHub.
 
@@ -64,31 +64,31 @@ Prefer Docker? It keeps agents isolated from the host, and on a server with a do
 automatic certificates:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --docker
-curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --docker --domain hub.example.com
+curl -fsSL https://raw.githubusercontent.com/suriyadi15/hermithub/main/install.sh | bash -s -- --docker
+curl -fsSL https://raw.githubusercontent.com/suriyadi15/hermithub/main/install.sh | bash -s -- --docker --domain hub.example.com
 ```
 
 All options, service management and uninstalling: [docs/installation.md](docs/installation.md).
 
-Or let your AI agent do it: install the [Project Hub skill](docs/ai-install.md) (Claude Code:
-`/plugin install project-hub --marketplace suriyadi15/project-hub`) and ask *"Install Project Hub on this
+Or let your AI agent do it: install the [HermitHub skill](docs/ai-install.md) (Claude Code:
+`/plugin install hermithub --marketplace suriyadi15/hermithub`) and ask *"Install HermitHub on this
 machine"*.
 
 Docker by hand is just a compose file:
 
 ```bash
-mkdir project-hub && cd project-hub
-curl -fsSLO https://raw.githubusercontent.com/suriyadi15/project-hub/main/docker-compose.yml
+mkdir hermithub && cd hermithub
+curl -fsSLO https://raw.githubusercontent.com/suriyadi15/hermithub/main/docker-compose.yml
 echo "PUID=$(id -u)" > .env && echo "PGID=$(id -g)" >> .env
 docker compose up -d
-docker compose logs project-hub   # shows the setup link
+docker compose logs hermithub   # shows the setup link
 ```
 
 ## Updating
 
-Project Hub checks for new releases and shows them in **Settings → Updates**. The standalone executable updates
-itself from there with one click, or with `project-hub update` in a terminal. Automatic updates can be switched on
-or off in Settings or with `project-hub auto-update on|off`. See [docs/installation.md](docs/installation.md#update).
+HermitHub checks for new releases and shows them in **Settings → Updates**. The standalone executable updates
+itself from there with one click, or with `hermithub update` in a terminal. Automatic updates can be switched on
+or off in Settings or with `hermithub auto-update on|off`. See [docs/installation.md](docs/installation.md#update).
 
 Re-running the installer also updates whichever install it finds. For Docker, run this in the install folder:
 
@@ -102,7 +102,7 @@ Conversations are kept either way; continue them with **Resume** on the project 
 
 ## Where things are stored
 
-Standalone: settings in `~/.config/project-hub/env`, database in `~/.project-hub`, projects in `~/projects`.
+Standalone: settings in `~/.config/hermithub/env`, database in `~/.hermithub`, projects in `~/projects`.
 Agents and logins are those of your user (`~/.local`, `~/.claude`, `~/.config/gh`…).
 
 Docker: everything is in `./data` next to `docker-compose.yml`:

@@ -1,9 +1,9 @@
-# Project Hub troubleshooting
+# HermitHub troubleshooting
 
 ## Standalone install
 
-Start with `project-hub doctor` and `journalctl --user -u project-hub -n 100` (macOS:
-`tail -100 ~/Library/Logs/project-hub.log`).
+Start with `hermithub doctor` and `journalctl --user -u hermithub -n 100` (macOS:
+`tail -100 ~/Library/Logs/hermithub.log`).
 
 | Symptom | Cause | Fix |
 |---|---|---|
@@ -11,10 +11,10 @@ Start with `project-hub doctor` and `journalctl --user -u project-hub -n 100` (m
 | Installer: `Run this as your normal user, not root` | Ran as root | Create or switch to a normal user, or use `--docker` |
 | Installer: `No systemd user session here` | `su`/`sudo -u` shell, container or OpenRC | Log in as that user directly (SSH), or start it with the printed `nohup` command |
 | Hub stops when you log out | Lingering is off | `sudo loginctl enable-linger $USER` |
-| `address already in use` | Port taken | Change `PORT` in `~/.config/project-hub/env`, `systemctl --user restart project-hub` |
-| Sessions fail with `tmux: command not found` | tmux missing or not on the service PATH | Install tmux; the service PATH is set in `~/.config/project-hub/run.sh` (re-run the installer to regenerate it) |
+| `address already in use` | Port taken | Change `PORT` in `~/.config/hermithub/env`, `systemctl --user restart hermithub` |
+| Sessions fail with `tmux: command not found` | tmux missing or not on the service PATH | Install tmux; the service PATH is set in `~/.config/hermithub/run.sh` (re-run the installer to regenerate it) |
 | "X is not installed" right after installing an npm agent | Node.js/npm missing | Install Node.js 20+ with npm, then install the agent again |
-| Lost setup link | – | `cat ~/.project-hub/setup-token` |
+| Lost setup link | – | `cat ~/.hermithub/setup-token` |
 
 Restarting or updating the service keeps tmux sessions running. `install.sh --uninstall` stops them.
 
@@ -24,7 +24,7 @@ Run commands from the install folder. Start with:
 
 ```bash
 docker compose ps
-docker compose logs --tail 100 project-hub
+docker compose logs --tail 100 hermithub
 ```
 
 ## Container keeps restarting / unhealthy
@@ -40,7 +40,7 @@ Never fix permissions by running the hub as root (`PUID=0`).
 
 ## Image pull fails
 
-`manifest unknown`, `not found` or `denied` for `ghcr.io/suriyadi15/project-hub`: no release image is
+`manifest unknown`, `not found` or `denied` for `ghcr.io/suriyadi15/hermithub`: no release image is
 available to you yet. Use the build-from-source steps in SKILL.md. Behind a proxy: set `HTTP_PROXY` /
 `HTTPS_PROXY` for the Docker daemon, not only the shell.
 
@@ -63,7 +63,7 @@ available to you yet. Use the build-from-source steps in SKILL.md. Behind a prox
 - Setup page says "Invalid setup token": the token changes on every container start while no password
   exists. Read the current one: `cat data/db/setup-token`.
 - "Setup is already done": a password exists. Use the login page, or reset it:
-  `docker compose exec -u hub project-hub bun run set-password`.
+  `docker compose exec -u hub hermithub bun run set-password`.
 - "Too many attempts": wait 15 minutes or restart the container.
 
 ## Agents (Settings → AI agents)
@@ -92,7 +92,7 @@ Conversations are kept in `data/home`; on the project page use **Resume** / "Con
 
 ```bash
 docker compose version; docker compose images
-docker compose logs --tail 200 project-hub   # remove tokens/keys before sharing
+docker compose logs --tail 200 hermithub   # remove tokens/keys before sharing
 ```
 
-Issues: https://github.com/suriyadi15/project-hub/issues
+Issues: https://github.com/suriyadi15/hermithub/issues

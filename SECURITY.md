@@ -1,6 +1,6 @@
 # Security policy
 
-Project Hub provides shell access by design, so the login, origin checks, setup token and path checks are
+HermitHub provides shell access by design, so the login, origin checks, setup token and path checks are
 the security boundary. Issues that bypass them are taken seriously.
 
 ## Reporting a vulnerability

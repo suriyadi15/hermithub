@@ -14,7 +14,7 @@ export interface PermissionMode {
 }
 
 /**
- * One AI coding agent CLI. Adding an agent to Project Hub means adding one entry to AGENTS:
+ * One AI coding agent CLI. Adding an agent to HermitHub means adding one entry to AGENTS:
  * how to install it, how to tell whether it is logged in, and how to launch it in a project.
  */
 export interface AgentDef {
