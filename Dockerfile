@@ -69,7 +69,7 @@ COPY --from=prod-deps /app/server/node_modules ./server/node_modules
 COPY server ./server
 COPY --from=build /app/web/dist ./web/dist
 
-LABEL org.opencontainers.image.title="Project Hub" \
+LABEL org.opencontainers.image.title="HermitHub" \
       org.opencontainers.image.description="Self-hosted web dashboard for projects and AI coding agents" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.version="$VERSION"

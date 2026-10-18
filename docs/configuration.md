@@ -4,28 +4,28 @@ Almost everything is configured in the dashboard (**Settings**). The rest are a 
 
 ## Standalone executable
 
-Settings live in `~/.config/project-hub/env` (written by the installer). Restart the service after a change:
-`systemctl --user restart project-hub` on Linux, `launchctl kickstart -k gui/$(id -u)/dev.project-hub` on macOS.
+Settings live in `~/.config/hermithub/env` (written by the installer). Restart the service after a change:
+`systemctl --user restart hermithub` on Linux, `launchctl kickstart -k gui/$(id -u)/dev.hermithub` on macOS.
 
 | Variable | Default | Meaning |
 |---|---|---|
 | `PORT` | `8787` | Port of the dashboard |
 | `HOST` | `127.0.0.1` | Address to listen on. `0.0.0.0` exposes it on all interfaces. |
-| `DATA_DIR` | `~/.project-hub` | Database, setup token, tmux config |
+| `DATA_DIR` | `~/.hermithub` | Database, setup token, tmux config |
 | `PROJECTS_DIR` | `~/projects` | Where projects live |
 | `PUBLIC_ORIGIN` | – | Public URL(s) behind a reverse proxy, as below |
 | `TRUST_PROXY` | – | Client IP header behind a proxy, as below |
 | `HUB_PASSWORD` | – | Seeds the password on first start instead of the setup page |
 | `HUB_TMUX_SOCKET` | `hub` | Name of the private tmux server (`tmux -L hub ls` lists the sessions) |
-| `HUB_AUTO_UPDATE` | – | `1` / `0` turns automatic updates on / off, overriding the switch in Settings and `project-hub auto-update` |
+| `HUB_AUTO_UPDATE` | – | `1` / `0` turns automatic updates on / off, overriding the switch in Settings and `hermithub auto-update` |
 | `HUB_UPDATE_CHECK` | `1` | `0` stops the release check every 6 hours (and with it automatic updates) |
-| `HUB_REPO` | `suriyadi15/project-hub` | GitHub repository releases and updates come from (for forks) |
+| `HUB_REPO` | `suriyadi15/hermithub` | GitHub repository releases and updates come from (for forks) |
 
-The service starts through `~/.config/project-hub/run.sh`, which the installer regenerates. It puts `~/.local/bin`
+The service starts through `~/.config/hermithub/run.sh`, which the installer regenerates. It puts `~/.local/bin`
 and the usual system folders on `PATH`, and sets `NPM_CONFIG_PREFIX=~/.local` so agents installed from the dashboard
 with npm need no sudo. Agents, their logins, `gh`, git config and SSH keys are your user's own.
 
-There are no container limits. Use systemd's (`systemctl --user edit project-hub`, then `MemoryMax=6G` under `[Service]`)
+There are no container limits. Use systemd's (`systemctl --user edit hermithub`, then `MemoryMax=6G` under `[Service]`)
 if you want a cap.
 
 ## Docker
@@ -44,7 +44,7 @@ The `.env` file next to `docker-compose.yml` holds these:
 | `HUB_DATA` | `./data` | Where `home/` and `db/` live |
 | `HUB_PROJECTS` | `./data/projects` | Where projects live |
 | `HUB_VERSION` | `latest` | Image tag |
-| `HUB_IMAGE` | `ghcr.io/suriyadi15/project-hub` | Image name (for forks) |
+| `HUB_IMAGE` | `ghcr.io/suriyadi15/hermithub` | Image name (for forks) |
 | `HUB_PASSWORD` | – | Seeds the password on first start instead of the setup page |
 
 Apply changes with `docker compose up -d`.
@@ -73,7 +73,7 @@ Agents run inside the container. To cap memory for everything in it, uncomment `
 
 ```yaml
 services:
-  project-hub:
+  hermithub:
     mem_limit: 6g
     cpus: 4
 ```
@@ -83,7 +83,7 @@ services:
 The web terminal is the easiest. From the host:
 
 ```bash
-docker compose exec -u hub project-hub bash -l
+docker compose exec -u hub hermithub bash -l
 ```
 
 Always pass `-u hub`; as root you would create files the dashboard cannot change.
@@ -93,7 +93,7 @@ Always pass `-u hub`; as root you would create files the dashboard cannot change
 The image includes git, gh, tmux, ripgrep, curl, jq, Node.js and Bun. For more, build on top of it:
 
 ```dockerfile
-FROM ghcr.io/suriyadi15/project-hub:latest
+FROM ghcr.io/suriyadi15/hermithub:latest
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv && rm -rf /var/lib/apt/lists/*
 ```
 

@@ -23,5 +23,5 @@ body:
     id: logs
     attributes:
       label: Logs
-      description: Output of `docker compose logs project-hub` (remove secrets)
+      description: Output of `docker compose logs hermithub` (remove secrets)
       render: text

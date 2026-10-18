@@ -19,7 +19,7 @@ jobs:
       - name: Build and smoke-test the standalone executable
         run: |
           bun run build:bin --host
-          bin=$(ls dist/project-hub-linux-*)
+          bin=$(ls dist/hermithub-linux-*)
           dir=$(mktemp -d)
           cd "$dir"   # no web/dist here: the frontend must come from the executable
           HOME="$dir" DATA_DIR="$dir/data" PROJECTS_DIR="$dir/projects" PORT=18787 "$GITHUB_WORKSPACE/$bin" &

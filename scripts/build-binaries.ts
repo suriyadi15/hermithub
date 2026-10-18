@@ -1,11 +1,11 @@
 /**
- * Builds the standalone `project-hub` executables (server + frontend in one file) into dist/.
+ * Builds the standalone `hermithub` executables (server + frontend in one file) into dist/.
  *
  *   bun run build:bin                    # every release target
  *   bun run build:bin linux-x64          # only some (names as in TARGETS)
  *   bun run build:bin --host             # only the platform this runs on
  */
-import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { $ } from "bun";
 
@@ -68,15 +68,19 @@ await writeFile(
 );
 
 for (const name of names) {
-  const outfile = join(DIST, `project-hub-${name}`);
+  const outfile = join(DIST, `hermithub-${name}`);
   console.log(`Building ${relative(ROOT, outfile)} (${TARGETS[name]})`);
   await $`bun build ${entry} --compile --minify --define ${`process.env.HUB_TARGET="${name}"`} --no-compile-autoload-dotenv --no-compile-autoload-bunfig --target=${TARGETS[name]} --outfile ${outfile}`.cwd(ROOT);
 }
 await rm(ENTRY_DIR, { recursive: true, force: true });
 
+// Copies under the name from before the rename (Project Hub): the updater of v0.5.0 and older downloads
+// project-hub-<target>. The new executable moves such installs over to the new name when it starts.
+for (const name of names) await copyFile(join(DIST, `hermithub-${name}`), join(DIST, `project-hub-${name}`));
+
 // Checksums of everything in dist/, in the format `sha256sum -c` and `shasum -a 256 -c` read.
 const sums: string[] = [];
-for (const f of (await readdir(DIST)).filter((f) => f.startsWith("project-hub-")).sort()) {
+for (const f of (await readdir(DIST)).filter((f) => /^(hermithub|project-hub)-/.test(f)).sort()) {
   const hash = new Bun.CryptoHasher("sha256").update(await Bun.file(join(DIST, f)).arrayBuffer()).digest("hex");
   sums.push(`${hash}  ${f}`);
 }

@@ -1,8 +1,9 @@
 import { existsSync } from "node:fs";
 import { disableTotp, setPassword, totpEnabled } from "./auth";
+import { LEGACY, NAME } from "./legacy";
 import { autoUpdate, installUpdate, setAutoUpdate, updateStatus } from "./update";
 
-/** Shared by `bun run set-password` and `project-hub set-password`. */
+/** Shared by `bun run set-password` and `hermithub set-password`. */
 export async function setPasswordCommand(arg?: string) {
   const pw = arg ?? prompt("New password (min. 8 characters):");
   if (!pw) process.exit(1);
@@ -10,7 +11,7 @@ export async function setPasswordCommand(arg?: string) {
   console.log("Password updated. All existing logins were signed out.");
 }
 
-/** Shared by `bun run disable-2fa` and `project-hub disable-2fa`. */
+/** Shared by `bun run disable-2fa` and `hermithub disable-2fa`. */
 export function disable2faCommand() {
   if (!totpEnabled()) {
     console.log("Two-factor authentication is already off.");
@@ -25,20 +26,23 @@ function usage(msg: string): never {
   process.exit(1);
 }
 
+/** Restarts the service, under its new name or the one from before the rename (Project Hub). */
 function restartService(): string | null {
   const home = process.env.HOME ?? "";
-  const unit = `${process.env.XDG_CONFIG_HOME || `${home}/.config`}/systemd/user/project-hub.service`;
-  if (process.platform === "linux" && existsSync(unit)) {
-    return Bun.spawnSync(["systemctl", "--user", "restart", "project-hub"]).exitCode === 0 ? "systemd" : null;
-  }
-  if (process.platform === "darwin" && existsSync(`${home}/Library/LaunchAgents/dev.project-hub.plist`)) {
-    const uid = process.getuid?.() ?? 0;
-    return Bun.spawnSync(["launchctl", "kickstart", "-k", `gui/${uid}/dev.project-hub`]).exitCode === 0 ? "launchd" : null;
+  const units = `${process.env.XDG_CONFIG_HOME || `${home}/.config`}/systemd/user`;
+  for (const name of [NAME, LEGACY]) {
+    if (process.platform === "linux" && existsSync(`${units}/${name}.service`)) {
+      return Bun.spawnSync(["systemctl", "--user", "restart", name]).exitCode === 0 ? "systemd" : null;
+    }
+    if (process.platform === "darwin" && existsSync(`${home}/Library/LaunchAgents/dev.${name}.plist`)) {
+      const uid = process.getuid?.() ?? 0;
+      return Bun.spawnSync(["launchctl", "kickstart", "-k", `gui/${uid}/dev.${name}`]).exitCode === 0 ? "launchd" : null;
+    }
   }
   return null;
 }
 
-/** `project-hub update [--check] [--version vX.Y.Z] [-y]` */
+/** `hermithub update [--check] [--version vX.Y.Z] [-y]` */
 export async function updateCommand(args: string[]) {
   const check = args.includes("--check");
   const yes = args.includes("-y") || args.includes("--yes");
@@ -50,7 +54,7 @@ export async function updateCommand(args: string[]) {
   if (s.error) console.error(`Could not check for updates: ${s.error}`);
   console.log(`Installed: ${s.current}\nLatest:    ${s.latest ?? "unknown"}`);
   if (check) {
-    console.log(s.available ? `\nUpdate available: run 'project-hub update'. Notes: ${s.notesUrl}` : "\nUp to date.");
+    console.log(s.available ? `\nUpdate available: run 'hermithub update'. Notes: ${s.notesUrl}` : "\nUp to date.");
     return;
   }
   if (!tag && !s.available) return console.log("\nUp to date.");
@@ -65,18 +69,18 @@ export async function updateCommand(args: string[]) {
   console.log(
     restarted
       ? `Restarted the ${restarted} service. Agent sessions keep running.`
-      : "Restart Project Hub to use the new version.",
+      : "Restart HermitHub to use the new version.",
   );
 }
 
-/** `project-hub auto-update on|off|status` */
+/** `hermithub auto-update on|off|status` */
 export function autoUpdateCommand(arg?: string) {
   if (arg === "on" || arg === "off") setAutoUpdate(arg === "on");
-  else if (arg && arg !== "status") usage("Usage: project-hub auto-update on|off|status");
+  else if (arg && arg !== "status") usage("Usage: hermithub auto-update on|off|status");
   const a = autoUpdate();
   console.log(`Automatic updates are ${a.enabled ? "on" : "off"}${a.fromEnv ? " (set by HUB_AUTO_UPDATE)" : ""}.`);
   if (a.fromEnv && (arg === "on" || arg === "off")) {
-    console.log("HUB_AUTO_UPDATE in the environment overrides this setting; change it in ~/.config/project-hub/env.");
+    console.log("HUB_AUTO_UPDATE in the environment overrides this setting; change it in ~/.config/hermithub/env.");
   }
   if (arg === "on" || arg === "off") console.log("The running server picks this up at its next check (within 6 hours).");
 }

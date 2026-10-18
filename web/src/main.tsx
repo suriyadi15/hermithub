@@ -56,7 +56,7 @@ function Shell() {
       {!inProject && (
         <header className="flex shrink-0 items-center gap-1 border-b px-3 py-2 pt-safe-2 sm:gap-2 sm:px-6 sm:py-2.5 sm:pt-safe-2.5">
           <img src="/favicon.svg" alt="" className="size-7" />
-          <span className="mr-2 font-semibold sm:mr-4">Project Hub</span>
+          <span className="mr-2 font-semibold sm:mr-4">HermitHub</span>
           {nav("/", "Dashboard", LayoutDashboard)}
           {nav("/settings", "Settings", SettingsIcon, update.data?.available)}
           <Button

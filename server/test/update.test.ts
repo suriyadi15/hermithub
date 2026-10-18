@@ -15,12 +15,12 @@ const server = Bun.serve({
         tag_name: "v9.9.9",
         html_url: `${base}/notes`,
         assets: [
-          { name: "project-hub-linux-x64", browser_download_url: `${base}/dl/project-hub-linux-x64` },
+          { name: "hermithub-linux-x64", browser_download_url: `${base}/dl/hermithub-linux-x64` },
           { name: "SHA256SUMS", browser_download_url: `${base}/dl/SHA256SUMS` },
         ],
       });
     }
-    if (pathname === "/dl/project-hub-linux-x64") return new Response(NEW_BIN);
+    if (pathname === "/dl/hermithub-linux-x64") return new Response(NEW_BIN);
     if (pathname === "/dl/SHA256SUMS") return new Response(sums);
     return new Response("not found", { status: 404 });
   },
@@ -75,23 +75,23 @@ describe("auto-update", () => {
 
 describe("installUpdate", () => {
   const dir = mkdtempSync(join(tmpdir(), "hub-bin-"));
-  const binPath = join(dir, "project-hub");
+  const binPath = join(dir, "hermithub");
   beforeEach(() => writeFileSync(binPath, "old"));
 
   test("replaces the executable after checking the checksum", async () => {
-    sums = `${hash("other")}  project-hub-linux-arm64\n${hash(NEW_BIN)}  project-hub-linux-x64\n`;
+    sums = `${hash("other")}  hermithub-linux-arm64\n${hash(NEW_BIN)}  hermithub-linux-x64\n`;
     const r = await installUpdate({ target: "linux-x64", binPath });
     expect(r).toEqual({ from: "1.0.0", to: "9.9.9" });
     expect(readFileSync(binPath, "utf8")).toBe(NEW_BIN);
   });
 
   test("refuses a checksum mismatch", async () => {
-    sums = `${hash("tampered")}  project-hub-linux-x64\n`;
+    sums = `${hash("tampered")}  hermithub-linux-x64\n`;
     await expect(installUpdate({ target: "linux-x64", binPath, tag: "v9.9.9" })).rejects.toThrow(/Checksum mismatch/);
     expect(readFileSync(binPath, "utf8")).toBe("old");
   });
 
   test("refuses a missing asset", async () => {
-    await expect(installUpdate({ target: "darwin-arm64", binPath })).rejects.toThrow(/has no project-hub-darwin-arm64/);
+    await expect(installUpdate({ target: "darwin-arm64", binPath })).rejects.toThrow(/has no hermithub-darwin-arm64/);
   });
 });

@@ -12,7 +12,7 @@ import { exec, HttpError } from "./exec";
  */
 export const VERSION: string = process.env.HUB_VERSION || pkg.version || "dev";
 export const TARGET = process.env.HUB_TARGET ?? "";
-const REPO = process.env.HUB_REPO || "suriyadi15/project-hub";
+const REPO = process.env.HUB_REPO || "suriyadi15/hermithub";
 const API = (process.env.HUB_UPDATE_API || "https://api.github.com").replace(/\/$/, "");
 const CHECK_EVERY_MS = 6 * 3600_000;
 
@@ -40,7 +40,7 @@ export function cmpSemver(a: string, b: string): number | null {
   return x[4] < y[4] ? -1 : 1;
 }
 
-/** HUB_AUTO_UPDATE=1|0 wins over the setting saved from the web or `project-hub auto-update`. */
+/** HUB_AUTO_UPDATE=1|0 wins over the setting saved from the web or `hermithub auto-update`. */
 export function autoUpdate(): { enabled: boolean; fromEnv: boolean } {
   const env = process.env.HUB_AUTO_UPDATE;
   if (env === "1" || env === "0") return { enabled: env === "1", fromEnv: true };
@@ -62,7 +62,7 @@ interface Release {
 async function fetchRelease(tag?: string): Promise<Release> {
   const path = tag ? `tags/v${tag.replace(/^v/, "")}` : "latest";
   const res = await fetch(`${API}/repos/${REPO}/releases/${path}`, {
-    headers: { accept: "application/vnd.github+json", "user-agent": `project-hub/${VERSION}` },
+    headers: { accept: "application/vnd.github+json", "user-agent": `hermithub/${VERSION}` },
     signal: AbortSignal.timeout(10_000),
   });
   if (res.status === 404) throw new HttpError(404, tag ? `Release ${tag} not found` : "No release found");
@@ -136,10 +136,10 @@ export async function installUpdate(opts: { tag?: string; target?: string; binPa
   if (!target) throw new HttpError(400, "Only the standalone executable can update itself");
   if (installing) throw new HttpError(409, "An update is already running");
   installing = true;
-  const tmp = join(dirname(binPath), ".project-hub.new");
+  const tmp = join(dirname(binPath), ".hermithub.new");
   try {
     const release = await fetchRelease(opts.tag);
-    const name = `project-hub-${target}`;
+    const name = `hermithub-${target}`;
     const binUrl = release.assets[name];
     const sumsUrl = release.assets["SHA256SUMS"];
     if (!binUrl || !sumsUrl) throw new HttpError(404, `Release ${release.tag} has no ${name}`);
@@ -179,7 +179,9 @@ export async function installUpdate(opts: { tag?: string; target?: string; binPa
  */
 export function supervised() {
   const env = process.env;
-  return Boolean(env.HUB_SERVICE || env.INVOCATION_ID || env.XPC_SERVICE_NAME === "dev.project-hub");
+  // dev.project-hub: launchd agents set up before the rename (Project Hub).
+  const agent = env.XPC_SERVICE_NAME === "dev.hermithub" || env.XPC_SERVICE_NAME === "dev.project-hub";
+  return Boolean(env.HUB_SERVICE || env.INVOCATION_ID || agent);
 }
 
 /**

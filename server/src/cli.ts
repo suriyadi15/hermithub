@@ -1,22 +1,22 @@
 /**
- * Entry point of the standalone executable (`project-hub`). Commands are imported lazily so `version` and
+ * Entry point of the standalone executable (`hermithub`). Commands are imported lazily so `version` and
  * `help` never touch the data folder.
  */
 import pkg from "../../package.json";
 
-const HELP = `Project Hub ${pkg.version}
+const HELP = `HermitHub ${pkg.version}
 
-Usage: project-hub [command]
+Usage: hermithub [command]
 
   serve           Start the dashboard (default)
   set-password    Set a new login password (signs out every session)
   disable-2fa     Turn off two-factor authentication
-  doctor          Check the tools Project Hub needs
+  doctor          Check the tools HermitHub needs
   update          Install the latest release (--check: only check, --version vX.Y.Z, -y: no prompt)
   auto-update     Install new releases automatically: on, off or status
   version         Print the version
 
-Settings come from the environment: PORT (8787), HOST (127.0.0.1), DATA_DIR (~/.project-hub),
+Settings come from the environment: PORT (8787), HOST (127.0.0.1), DATA_DIR (~/.hermithub),
 PROJECTS_DIR (~/projects), PUBLIC_ORIGIN, TRUST_PROXY, HUB_AUTO_UPDATE. See docs/configuration.md.`;
 
 async function doctor() {
@@ -40,10 +40,18 @@ async function doctor() {
 }
 
 const [command = "serve", ...args] = process.argv.slice(2);
+// Installs from before the rename (Project Hub): move the data folder before anything opens it.
+if (!["version", "--version", "-v", "help", "--help", "-h"].includes(command)) {
+  (await import("./legacy")).migrateLegacyFiles();
+}
 switch (command) {
-  case "serve":
+  case "serve": {
+    const { migrateLegacyService } = await import("./legacy");
+    const { supervised } = await import("./update");
+    if (supervised()) migrateLegacyService();
     await (await import("./index")).start();
     break;
+  }
   case "set-password":
     await (await import("./admin")).setPasswordCommand(args[0]);
     break;

@@ -36,7 +36,7 @@ export default function Setup({ onDone }: { onDone: () => void }) {
         <div className="flex items-center gap-3">
           <img src="/favicon.svg" alt="" className="size-10" />
           <div>
-            <h1 className="text-lg font-semibold">Welcome to Project Hub</h1>
+            <h1 className="text-lg font-semibold">Welcome to HermitHub</h1>
             <p className="text-sm text-muted-foreground">Create the password for this dashboard.</p>
           </div>
         </div>
@@ -45,7 +45,7 @@ export default function Setup({ onDone }: { onDone: () => void }) {
             <Label htmlFor="token">Setup token</Label>
             <Input id="token" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} />
             <p className="text-xs text-muted-foreground">
-              Printed by the installer and in <code className="font-mono">docker compose logs project-hub</code>, and
+              Printed by the installer and in <code className="font-mono">docker compose logs hermithub</code>, and
               stored in <code className="font-mono">data/db/setup-token</code>.
             </p>
           </div>

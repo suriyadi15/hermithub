@@ -26,7 +26,7 @@ async function reloadWhenUpdated(from: string) {
       if (res.ok && (await res.json()).version !== from) return window.location.reload();
     } catch {}
   }
-  toast.error("Project Hub did not come back. Check the service logs.");
+  toast.error("HermitHub did not come back. Check the service logs.");
 }
 
 export function UpdatesSection() {
@@ -41,7 +41,7 @@ export function UpdatesSection() {
     onSuccess: (r) => {
       qc.setQueryData(["update"], r);
       if (r.error) toast.error(r.error);
-      else toast.success(r.available ? `${r.latest} is available` : "Project Hub is up to date");
+      else toast.success(r.available ? `${r.latest} is available` : "HermitHub is up to date");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -49,7 +49,7 @@ export function UpdatesSection() {
     mutationFn: () => unwrap(api.update.install.post({ version: s?.latest ?? undefined })),
     onSuccess: async (r) => {
       if (!r.restarting) {
-        toast.success(`Installed ${r.to}. Restart Project Hub to use it.`);
+        toast.success(`Installed ${r.to}. Restart HermitHub to use it.`);
         return;
       }
       toast.success(`Installed ${r.to}. Restarting… Agent sessions keep running.`);
@@ -114,10 +114,10 @@ export function UpdatesSection() {
           </label>
           <p className="text-xs text-muted-foreground">
             {s.auto.fromEnv
-              ? "Set by HUB_AUTO_UPDATE in the environment; change it in ~/.config/project-hub/env."
+              ? "Set by HUB_AUTO_UPDATE in the environment; change it in ~/.config/hermithub/env."
               : "Checked every 6 hours. The server restarts on its own; running agent sessions keep going."}{" "}
-            From a terminal: <code className="font-mono">project-hub update</code>,{" "}
-            <code className="font-mono">project-hub auto-update on|off</code>.
+            From a terminal: <code className="font-mono">hermithub update</code>,{" "}
+            <code className="font-mono">hermithub auto-update on|off</code>.
           </p>
         </div>
       ) : (
@@ -146,7 +146,7 @@ export function UpdatesSection() {
         open={confirm}
         onOpenChange={setConfirm}
         title={`Update to ${s.latest}?`}
-        description="Project Hub downloads the new version, checks its checksum and restarts. Running agent sessions keep going; this page reloads when it is back."
+        description="HermitHub downloads the new version, checks its checksum and restarts. Running agent sessions keep going; this page reloads when it is back."
         confirmLabel="Update"
         onConfirm={() => install.mutate()}
       />

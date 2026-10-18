@@ -72,7 +72,7 @@ export function verifyTotp(secret: string, code: string, now = Date.now(), lastS
 }
 
 export function otpauthUri(secret: string) {
-  const label = encodeURIComponent("Project Hub");
+  const label = encodeURIComponent("HermitHub");
   return `otpauth://totp/${label}?secret=${secret}&issuer=${label}&algorithm=SHA1&digits=${DIGITS}&period=${PERIOD}`;
 }
 

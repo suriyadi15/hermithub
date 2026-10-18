@@ -7,7 +7,7 @@ By default nothing from the host is mounted. To work on host folders or reuse ho
 
 ```yaml
 services:
-  project-hub:
+  hermithub:
     volumes:
       - /home/me/code:/home/hub/projects        # host projects instead of data/projects
       - /home/me/.claude:/home/hub/.claude      # share Claude login + history with the host
@@ -28,14 +28,14 @@ Notes:
 To move an existing setup (projects in `~/projects`, Claude logged in on the host) into a self-contained install:
 
 ```bash
-cd ~/project-hub && docker compose down
+cd ~/hermithub && docker compose down
 mkdir -p data/home data/projects
 cp -a ~/projects/. data/projects/
 cp -a ~/.claude data/home/ && cp ~/.claude.json data/home/
 # Claude keys history by path: rename /home/<you>/projects/... to /home/hub/projects/...
 cd data/home/.claude/projects
 for d in -home-"$USER"-projects-*; do mv "$d" "-home-hub-projects-${d#-home-$USER-projects-}"; done
-cd ~/project-hub && docker compose up -d
+cd ~/hermithub && docker compose up -d
 ```
 
 Then reconnect GitHub in Settings (or copy `~/.config/gh` to `data/home/.config/gh`).

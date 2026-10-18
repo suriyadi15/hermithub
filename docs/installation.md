@@ -1,8 +1,8 @@
 # Installation
 
-Project Hub can be installed two ways:
+HermitHub can be installed two ways:
 
-- **Standalone executable** (default): a single `project-hub` file that runs as a user service. No Docker needed.
+- **Standalone executable** (default): a single `hermithub` file that runs as a user service. No Docker needed.
 - **Docker**: the container image with `docker compose`. Agents are isolated from the host, and built-in HTTPS
   is available with `--domain`.
 
@@ -28,25 +28,25 @@ Either way, 2 GB RAM or more is recommended; each agent session uses a few hundr
 ## One-command install (standalone)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/suriyadi15/hermithub/main/install.sh | bash
 ```
 
 What it does:
 
 1. Detects the OS and CPU and installs `tmux` and `git` if they are missing (after asking).
-2. Downloads `project-hub-<os>-<arch>` from the latest GitHub release, checks it against `SHA256SUMS` and
-   installs it to `~/.local/bin/project-hub`.
-3. Writes the settings to `~/.config/project-hub/env`.
-4. Starts it as a user service. On Linux this is a systemd user unit (`project-hub.service`), and the installer
+2. Downloads `hermithub-<os>-<arch>` from the latest GitHub release, checks it against `SHA256SUMS` and
+   installs it to `~/.local/bin/hermithub`.
+3. Writes the settings to `~/.config/hermithub/env`.
+4. Starts it as a user service. On Linux this is a systemd user unit (`hermithub.service`), and the installer
    offers `loginctl enable-linger` so the service keeps running after you log out. On macOS it is a launchd agent
-   (`dev.project-hub`).
+   (`dev.hermithub`).
 5. Prints the setup link with a one-time token.
 
-Data goes to `~/.project-hub` (database, settings) and projects to `~/projects`. Agents, their logins, GitHub
+Data goes to `~/.hermithub` (database, settings) and projects to `~/projects`. Agents, their logins, GitHub
 CLI and git config are those of your user account (`~/.local`, `~/.claude`, `~/.config/gh`, `~/.gitconfig`…).
 
 On a system without a systemd user session (Alpine/OpenRC, a container, a `su` shell), or with `--no-service`,
-the installer prints the command to start Project Hub yourself.
+the installer prints the command to start HermitHub yourself.
 
 ### Options
 
@@ -60,29 +60,29 @@ Pass them after `bash -s --`, e.g. `curl -fsSL …/install.sh | bash -s -- --por
 | `--prefix PATH` | Install the executable into `PATH/bin` (default `~/.local`) |
 | `--no-service` | Do not create a systemd / launchd service |
 | `--uninstall` | Remove the service and the executable, keep the data |
-| `--purge` | With `--uninstall`: also delete `~/.config/project-hub` and `~/.project-hub`. Projects are never deleted. |
+| `--purge` | With `--uninstall`: also delete `~/.config/hermithub` and `~/.hermithub`. Projects are never deleted. |
 | `--docker` | Use Docker instead (see below) |
-| `--native` | Force the standalone install even if a Docker install exists in `~/project-hub` |
+| `--native` | Force the standalone install even if a Docker install exists in `~/hermithub` |
 | `-y`, `--yes` | Do not ask questions |
 
 Built-in HTTPS (`--domain`) is Docker-only. For the standalone install put a reverse proxy in front, see
-[reverse-proxy.md](reverse-proxy.md), and set `PUBLIC_ORIGIN` / `TRUST_PROXY` in `~/.config/project-hub/env`.
+[reverse-proxy.md](reverse-proxy.md), and set `PUBLIC_ORIGIN` / `TRUST_PROXY` in `~/.config/hermithub/env`.
 
 ### Managing the service
 
 Linux (systemd):
 
 ```bash
-systemctl --user status project-hub
-journalctl --user -u project-hub -f        # logs
-systemctl --user restart project-hub       # after editing ~/.config/project-hub/env
+systemctl --user status hermithub
+journalctl --user -u hermithub -f        # logs
+systemctl --user restart hermithub       # after editing ~/.config/hermithub/env
 ```
 
 macOS (launchd):
 
 ```bash
-tail -f ~/Library/Logs/project-hub.log
-launchctl kickstart -k gui/$(id -u)/dev.project-hub
+tail -f ~/Library/Logs/hermithub.log
+launchctl kickstart -k gui/$(id -u)/dev.hermithub
 ```
 
 Agent sessions run in their own tmux server (`tmux -L hub`), which is not stopped when the service restarts
@@ -91,70 +91,80 @@ or updates. Running sessions keep going.
 The executable has a few commands of its own:
 
 ```bash
-project-hub doctor          # are tmux, git, node, npm, gh available?
-project-hub version
-project-hub set-password    # forgot the password
-project-hub disable-2fa     # lost the authenticator and the recovery codes
+hermithub doctor          # are tmux, git, node, npm, gh available?
+hermithub version
+hermithub set-password    # forgot the password
+hermithub disable-2fa     # lost the authenticator and the recovery codes
 ```
 
-`set-password` and `disable-2fa` use `~/.project-hub`. If you changed `DATA_DIR` in the env file, pass it along:
-`DATA_DIR=/path/to/data project-hub set-password`.
+`set-password` and `disable-2fa` use `~/.hermithub`. If you changed `DATA_DIR` in the env file, pass it along:
+`DATA_DIR=/path/to/data hermithub set-password`.
 
 ### Update
 
-Project Hub checks GitHub for a new release every 6 hours. When one is out, a dot appears on **Settings**, and
+HermitHub checks GitHub for a new release every 6 hours. When one is out, a dot appears on **Settings**, and
 **Settings → Updates** shows it with a button to install it. From a terminal:
 
 ```bash
-project-hub update --check        # is there a new release?
-project-hub update                # install it and restart the service
-project-hub update --version v0.5.0 -y   # a specific release, without asking
+hermithub update --check        # is there a new release?
+hermithub update                # install it and restart the service
+hermithub update --version v0.5.0 -y   # a specific release, without asking
 ```
 
 The update downloads the executable for your system from the release, checks it against `SHA256SUMS` and that it
-starts, replaces `~/.local/bin/project-hub` and restarts the service. Settings and data are kept, and running agent
+starts, replaces `~/.local/bin/hermithub` and restarts the service. Settings and data are kept, and running agent
 sessions keep going (they live in their own tmux server).
 
 **Automatic updates** are off by default. Turn them on or off in **Settings → Updates**, or:
 
 ```bash
-project-hub auto-update on        # install new releases on their own (checked every 6 hours)
-project-hub auto-update off
-project-hub auto-update status
+hermithub auto-update on        # install new releases on their own (checked every 6 hours)
+hermithub auto-update off
+hermithub auto-update status
 ```
 
-`HUB_AUTO_UPDATE=1` or `0` in `~/.config/project-hub/env` overrides that switch, and `HUB_UPDATE_CHECK=0` stops
-the checks altogether. Automatic installs only happen when Project Hub runs as a service, so it can be restarted.
+`HUB_AUTO_UPDATE=1` or `0` in `~/.config/hermithub/env` overrides that switch, and `HUB_UPDATE_CHECK=0` stops
+the checks altogether. Automatic installs only happen when HermitHub runs as a service, so it can be restarted.
 
 Re-running the installer also updates (and repairs the service files).
+
+### Installs from before the rename
+
+HermitHub was called Project Hub up to v0.5.0. An install from then updates like any other (from the dashboard,
+`project-hub update` or the installer). The first time the new version starts, it moves itself to the new names:
+`~/.project-hub` → `~/.hermithub`, `~/.config/project-hub` → `~/.config/hermithub`, and the
+`project-hub` service → `hermithub`. The old paths are kept as symlinks, so `project-hub` still works as a
+command. Running agent sessions keep going. A Docker install in `~/project-hub` is moved to `~/hermithub` when
+you re-run the installer; `docker compose pull` in the old folder keeps working too, since the image is still
+published under its old name.
 
 ### Uninstall
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --uninstall
+curl -fsSL https://raw.githubusercontent.com/suriyadi15/hermithub/main/install.sh | bash -s -- --uninstall
 # also delete settings and the database (projects in ~/projects stay):
-curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --uninstall --purge
+curl -fsSL https://raw.githubusercontent.com/suriyadi15/hermithub/main/install.sh | bash -s -- --uninstall --purge
 ```
 
 ## Docker install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/suriyadi15/project-hub/main/install.sh | bash -s -- --docker
+curl -fsSL https://raw.githubusercontent.com/suriyadi15/hermithub/main/install.sh | bash -s -- --docker
 ```
 
 What it does:
 
 1. Installs Docker if missing (Linux, after asking).
-2. Creates `~/project-hub` with `docker-compose.yml`, `.env` and the `data/` folders.
+2. Creates `~/hermithub` with `docker-compose.yml`, `.env` and the `data/` folders.
 3. Pulls the image and starts it.
 4. Prints the setup link with a one-time token.
 
-Once `~/project-hub/docker-compose.yml` exists, re-running the installer without options updates the Docker
+Once `~/hermithub/docker-compose.yml` exists, re-running the installer without options updates the Docker
 install. Options for Docker, in addition to `--port`, `--public`, `--version` and `--yes`:
 
 | Option | Meaning |
 |---|---|
-| `--dir PATH` | Install folder (default `~/project-hub`) |
+| `--dir PATH` | Install folder (default `~/hermithub`) |
 | `--domain NAME` | Serve `https://NAME` with automatic Let's Encrypt certificates. DNS must point to the server and ports 80/443 must be reachable. |
 
 Example: `curl -fsSL …/install.sh | bash -s -- --docker --domain hub.example.com --yes`
@@ -162,8 +172,8 @@ Example: `curl -fsSL …/install.sh | bash -s -- --docker --domain hub.example.c
 ### Manual Docker install
 
 ```bash
-mkdir project-hub && cd project-hub
-curl -fsSLO https://raw.githubusercontent.com/suriyadi15/project-hub/main/docker-compose.yml
+mkdir hermithub && cd hermithub
+curl -fsSLO https://raw.githubusercontent.com/suriyadi15/hermithub/main/docker-compose.yml
 printf 'PUID=%s\nPGID=%s\n' "$(id -u)" "$(id -g)" > .env
 mkdir -p data/home data/projects data/db
 docker compose up -d
@@ -172,10 +182,10 @@ docker compose up -d
 ### Docker uninstall
 
 ```bash
-cd ~/project-hub
+cd ~/hermithub
 docker compose down
 # Optional — deletes all projects, logins and settings:
-rm -rf ~/project-hub
+rm -rf ~/hermithub
 ```
 
 ## First login
@@ -183,9 +193,9 @@ rm -rf ~/project-hub
 Open the setup link printed by the installer. Lost it? Any of these show it again:
 
 ```bash
-cat ~/.project-hub/setup-token                        # standalone
-cat ~/project-hub/data/db/setup-token                 # Docker
-cd ~/project-hub && docker compose logs project-hub | grep setup
+cat ~/.hermithub/setup-token                        # standalone
+cat ~/hermithub/data/db/setup-token                 # Docker
+cd ~/hermithub && docker compose logs hermithub | grep setup
 ```
 
 The token only works until a password is set. For automated installs you can skip the setup page by
@@ -194,13 +204,13 @@ putting `HUB_PASSWORD=…` in the env file (standalone) or `.env` (Docker) befor
 Forgot the password:
 
 ```bash
-project-hub set-password                                          # standalone
-docker compose exec -u hub project-hub bun run set-password       # Docker
+hermithub set-password                                          # standalone
+docker compose exec -u hub hermithub bun run set-password       # Docker
 ```
 
 Lost the phone with your authenticator app and have no recovery codes left:
 
 ```bash
-project-hub disable-2fa                                           # standalone
-docker compose exec -u hub project-hub bun run disable-2fa        # Docker
+hermithub disable-2fa                                           # standalone
+docker compose exec -u hub hermithub bun run disable-2fa        # Docker
 ```

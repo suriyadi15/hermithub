@@ -3,7 +3,7 @@ flowchart TB
     caddy["Caddy (optional)<br/>HTTPS for --domain"]
 
     subgraph container["Docker container"]
-        server["Project Hub server · Bun + Elysia · :8787<br/>password login + origin check"]
+        server["HermitHub server · Bun + Elysia · :8787<br/>password login + origin check"]
         api["REST /api/*<br/>projects · files · git · search<br/>sessions · agents · settings"]
         ws["WebSocket /ws/term/:name<br/>live terminal"]
         tmux["tmux (private socket)<br/>one tmux session per agent session"]
