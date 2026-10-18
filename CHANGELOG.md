@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **New logo**: a hermit crab in its shell, in the dashboard, the website and the catalog assets in
+  `deploy/assets/`.
 - **One volume for Docker, and one-click deploy.** The image keeps everything in the home of the container
   user, `/home/hermithub`, laid out like a standalone install: database in `~/.hermithub`, projects in
   `~/projects`. With a single volume it runs on hosting platforms: a Render Blueprint (`render.yaml`), a
