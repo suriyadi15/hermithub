@@ -3,7 +3,7 @@
 import { readdir, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 
-const REPO = "https://github.com/suriyadi15/project-hub/blob/main";
+const REPO = "https://github.com/suriyadi15/hermithub/blob/main";
 const root = join(import.meta.dir, "../..");
 const src = join(root, "docs");
 const out = join(import.meta.dir, "../src/content/docs/docs");
