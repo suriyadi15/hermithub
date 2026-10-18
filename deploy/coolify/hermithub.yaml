@@ -6,6 +6,7 @@
 # port: 8787
 
 # Template for the Coolify service catalog (templates/compose/hermithub.yaml in coollabsio/coolify).
+# The logo is deploy/assets/hermithub.svg; it goes to svgs/hermithub.svg in that repository.
 # One volume holds the home of the container user: database, projects, agents and their logins.
 
 services:
