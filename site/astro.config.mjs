@@ -3,13 +3,13 @@ import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import starlightLinksValidator from "starlight-links-validator";
 
-const repo = "https://github.com/suriyadi15/project-hub";
+const repo = "https://github.com/suriyadi15/hermithub";
 
 export default defineConfig({
-  site: "https://projecthubapp.pages.dev",
+  site: "https://hermithub.pages.dev",
   integrations: [
     starlight({
-      title: "Project Hub",
+      title: "HermitHub",
       description:
         "A self-hosted web dashboard for your code projects and AI coding agents: Claude Code, Codex CLI, Gemini CLI, OpenCode and more.",
       logo: { src: "./public/favicon.svg" },
@@ -24,7 +24,7 @@ export default defineConfig({
           items: ["docs/installation", "docs/ai-install", "docs/configuration"],
         },
         {
-          label: "Using Project Hub",
+          label: "Using HermitHub",
           items: ["docs/agents", "docs/worktrees", "docs/github", "docs/reverse-proxy"],
         },
         { label: "Reference", items: ["docs/security", "docs/advanced"] },
