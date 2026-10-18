@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0 — 2026-10-18
+
+- **`hermithub tunnel`**: a public `https://….trycloudflare.com` address for a standalone install, with no
+  account, domain or open port. It downloads `cloudflared` into `~/.hermithub/bin` on first use. The address
+  changes on every run; see [docs/reverse-proxy.md](docs/reverse-proxy.md). Set a strong password and 2FA first.
+- The installer's final message, the README and the website now explain how to open the dashboard.
+
 ## 0.8.0 — 2026-10-18
 
 - **New logo**: a hermit crab in its shell, in the dashboard, the website and the catalog assets in
