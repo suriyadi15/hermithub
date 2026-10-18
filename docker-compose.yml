@@ -1,10 +1,11 @@
-# HermitHub — self-contained: everything (projects, agent logins, GitHub login, database)
-# lives under ./data next to this file. Nothing needs to be installed on the host besides Docker.
+# HermitHub — self-contained: everything (projects, agent logins, GitHub login, database) lives under
+# ./data next to this file, which is the home folder of the container user. Nothing needs to be installed
+# on the host besides Docker.
 name: hermithub
 
 services:
   hermithub:
-    image: ${HUB_IMAGE:-ghcr.io/suriyadi15/hermithub}:${HUB_VERSION:-latest}
+    image: ${HERMITHUB_IMAGE:-ghcr.io/suriyadi15/hermithub}:${HERMITHUB_VERSION:-latest}
     container_name: hermithub
     hostname: hermithub
     restart: unless-stopped
@@ -23,30 +24,32 @@ services:
       GIT_CONFIG_KEY_0: "url.https://github.com/.insteadOf"
       GIT_CONFIG_VALUE_0: "git@github.com:"
     ports:
-      # Localhost only by default. Use HUB_DOMAIN (built-in HTTPS), a reverse proxy, or a tunnel to
+      # Localhost only by default. Use HERMITHUB_DOMAIN (built-in HTTPS), a reverse proxy, or a tunnel to
       # reach it from elsewhere; see docs/reverse-proxy.md.
-      - "${HUB_BIND:-127.0.0.1}:${HUB_PORT:-8787}:8787"
+      - "${HERMITHUB_BIND:-127.0.0.1}:${HERMITHUB_PORT:-8787}:8787"
     volumes:
-      # Home of the `hub` user: installed agents (~/.local), their logins (~/.claude, ~/.codex,
-      # ~/.gemini), GitHub CLI login, git config and SSH keys.
-      - ${HUB_DATA:-./data}/home:/home/hub
-      - ${HUB_PROJECTS:-./data/projects}:/home/hub/projects
-      - ${HUB_DATA:-./data}/db:/data
+      # Home of the `hermithub` user: the database (~/.hermithub), projects (~/projects), installed agents
+      # (~/.local), their logins (~/.claude, ~/.codex, ~/.gemini), GitHub CLI login, git config and SSH keys.
+      - ${HERMITHUB_DATA:-./data}:/home/hermithub
+      # Projects default to the projects folder inside it (mounting it again changes nothing); set
+      # HERMITHUB_PROJECTS to keep them in another folder on the host.
+      - ${HERMITHUB_PROJECTS:-${HERMITHUB_DATA:-./data}/projects}:/home/hermithub/projects
     # Optional: cap memory for everything running inside (agent sessions included).
     # mem_limit: 6g
 
   # Optional HTTPS with automatic Let's Encrypt certificates. Enabled with
-  # `COMPOSE_PROFILES=https` and `HUB_DOMAIN=hub.example.com` in .env (install.sh --domain does this).
+  # `COMPOSE_PROFILES=https` and `HERMITHUB_DOMAIN=hub.example.com` in .env (install.sh --domain does this).
   caddy:
     image: caddy:2
     profiles: ["https"]
     restart: unless-stopped
-    command: caddy reverse-proxy --from ${HUB_DOMAIN:-localhost} --to hermithub:8787
+    command: caddy reverse-proxy --from ${HERMITHUB_DOMAIN:-localhost} --to hermithub:8787
     ports:
       - "80:80"
       - "443:443"
       - "443:443/udp"
     volumes:
-      - ${HUB_DATA:-./data}/caddy:/data
+      # Certificates. Kept outside ./data, which belongs to the container user.
+      - ${HERMITHUB_CADDY:-./caddy}:/data
     depends_on:
       - hermithub

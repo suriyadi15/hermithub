@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { Elysia, status, t } from "elysia";
-import { authRoutes, ensurePassword, initSetupToken, isAuthed, originOk } from "./auth";
+import { authRoutes, ensurePassword, initSetupToken, isAuthed, originOk, publicOrigin } from "./auth";
 import { agentRoutes } from "./agents";
 import { recentActivity } from "./db";
 import { HttpError } from "./exec";
@@ -100,10 +100,7 @@ export async function start() {
   startUpdateScheduler();
   app.listen({ port: PORT, hostname: HOST, idleTimeout: 120 });
   console.log(`HermitHub on http://${HOST}:${PORT} — projects: ${PROJECTS_DIR}`);
-  if (token) {
-    const origin = (process.env.PUBLIC_ORIGIN ?? "").split(",")[0]?.trim() || `http://localhost:${PORT}`;
-    console.log(`\nFirst run: create your password at\n  ${origin}/setup?token=${token}\n`);
-  }
+  if (token) console.log(`\nFirst run: create your password at\n  ${publicOrigin(process.env, PORT)}/setup?token=${token}\n`);
 }
 
 if (import.meta.main) await start();

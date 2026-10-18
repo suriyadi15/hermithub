@@ -8,18 +8,18 @@ import { exec, HttpError } from "./exec";
 
 /**
  * Release checks and self-update of the standalone executable. The executable knows its release asset from
- * HUB_TARGET, set at build time (scripts/build-binaries.ts). Docker and source installs only get the check.
+ * HERMITHUB_TARGET, set at build time (scripts/build-binaries.ts). Docker and source installs only get the check.
  */
-export const VERSION: string = process.env.HUB_VERSION || pkg.version || "dev";
-export const TARGET = process.env.HUB_TARGET ?? "";
-const REPO = process.env.HUB_REPO || "suriyadi15/hermithub";
-const API = (process.env.HUB_UPDATE_API || "https://api.github.com").replace(/\/$/, "");
+export const VERSION: string = process.env.HERMITHUB_VERSION || pkg.version || "dev";
+export const TARGET = process.env.HERMITHUB_TARGET ?? "";
+const REPO = process.env.HERMITHUB_REPO || "suriyadi15/hermithub";
+const API = (process.env.HERMITHUB_UPDATE_API || "https://api.github.com").replace(/\/$/, "");
 const CHECK_EVERY_MS = 6 * 3600_000;
 
 export type InstallKind = "binary" | "docker" | "source";
 export const INSTALL_KIND: InstallKind = TARGET
   ? "binary"
-  : process.env.HUB_DOCKER === "1" || existsSync("/.dockerenv")
+  : process.env.HERMITHUB_DOCKER === "1" || existsSync("/.dockerenv")
     ? "docker"
     : "source";
 
@@ -40,9 +40,9 @@ export function cmpSemver(a: string, b: string): number | null {
   return x[4] < y[4] ? -1 : 1;
 }
 
-/** HUB_AUTO_UPDATE=1|0 wins over the setting saved from the web or `hermithub auto-update`. */
+/** HERMITHUB_AUTO_UPDATE=1|0 wins over the setting saved from the web or `hermithub auto-update`. */
 export function autoUpdate(): { enabled: boolean; fromEnv: boolean } {
-  const env = process.env.HUB_AUTO_UPDATE;
+  const env = process.env.HERMITHUB_AUTO_UPDATE;
   if (env === "1" || env === "0") return { enabled: env === "1", fromEnv: true };
   return { enabled: getSetting("update.auto") === "1", fromEnv: false };
 }
@@ -157,8 +157,8 @@ export async function installUpdate(opts: { tag?: string; target?: string; binPa
     await chmod(tmp, 0o755);
     if (process.platform === "darwin") await exec(["xattr", "-d", "com.apple.quarantine", tmp]);
 
-    // HUB_VERSION would override the version the new executable reports.
-    const smoke = await exec([tmp, "version"], { timeoutMs: 15_000, env: { HUB_VERSION: "" } });
+    // HERMITHUB_VERSION would override the version the new executable reports.
+    const smoke = await exec([tmp, "version"], { timeoutMs: 15_000, env: { HERMITHUB_VERSION: "" } });
     if (smoke.code !== 0) throw new HttpError(500, `The new version does not start: ${smoke.stderr.trim() || smoke.code}`);
 
     await rename(tmp, binPath);
@@ -174,14 +174,14 @@ export async function installUpdate(opts: { tag?: string; target?: string; binPa
 }
 
 /**
- * Run by systemd or launchd, which start the server again after it exits. install.sh sets HUB_SERVICE; the
+ * Run by systemd or launchd, which start the server again after it exits. install.sh sets HERMITHUB_SERVICE; the
  * others cover services set up by hand.
  */
 export function supervised() {
   const env = process.env;
   // dev.project-hub: launchd agents set up before the rename (Project Hub).
   const agent = env.XPC_SERVICE_NAME === "dev.hermithub" || env.XPC_SERVICE_NAME === "dev.project-hub";
-  return Boolean(env.HUB_SERVICE || env.INVOCATION_ID || agent);
+  return Boolean(env.HERMITHUB_SERVICE || env.INVOCATION_ID || agent);
 }
 
 /**
@@ -204,7 +204,7 @@ async function installAndRestart(tag?: string) {
 
 /** Checks for a release now and then; installs it too when auto-update is on. */
 export function startUpdateScheduler() {
-  if (process.env.HUB_UPDATE_CHECK === "0") return;
+  if (process.env.HERMITHUB_UPDATE_CHECK === "0") return;
   const tick = async () => {
     try {
       const s = await updateStatus();

@@ -1,0 +1,24 @@
+# Render Blueprint: https://render.com/deploy?repo=https://github.com/suriyadi15/hermithub
+# One web service from the published image, with one disk as the home of the container user (database,
+# projects, agents and their logins). See docs/one-click-deploy.md.
+services:
+  - type: web
+    name: hermithub
+    runtime: image
+    image:
+      url: ghcr.io/suriyadi15/hermithub:latest
+    # Agents need memory: 2 GB is a comfortable minimum. A disk needs a paid plan anyway.
+    plan: standard
+    healthCheckPath: /api/health
+    disk:
+      name: home
+      mountPath: /home/hermithub
+      sizeGB: 10
+    envVars:
+      # Login password, generated on the first deploy (shown under Environment). Only used on the first
+      # start; change it later in Settings.
+      - key: HERMITHUB_PASSWORD
+        generateValue: true
+      # Render's proxy sets X-Forwarded-For: use it for the failed-login lockout.
+      - key: TRUST_PROXY
+        value: "1"

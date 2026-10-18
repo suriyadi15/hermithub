@@ -1,5 +1,5 @@
 {
-  "name": "@hub/server",
+  "name": "@hermithub/server",
   "private": true,
   "type": "module",
   "main": "src/index.ts",

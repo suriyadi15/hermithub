@@ -27,12 +27,12 @@ const server = Bun.serve({
 });
 afterAll(() => server.stop(true));
 
-process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "hub-update-"));
-process.env.HUB_DB = ":memory:";
-process.env.HUB_UPDATE_API = `http://localhost:${server.port}`;
-process.env.HUB_REPO = "test/hub";
-process.env.HUB_VERSION = "1.0.0";
-delete process.env.HUB_AUTO_UPDATE;
+process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "hermithub-update-"));
+process.env.HERMITHUB_DB = ":memory:";
+process.env.HERMITHUB_UPDATE_API = `http://localhost:${server.port}`;
+process.env.HERMITHUB_REPO = "test/hub";
+process.env.HERMITHUB_VERSION = "1.0.0";
+delete process.env.HERMITHUB_AUTO_UPDATE;
 const { autoUpdate, cmpSemver, installUpdate, setAutoUpdate, updateStatus } = await import("../src/update");
 
 const hash = (s: string) => new Bun.CryptoHasher("sha256").update(s).digest("hex");
@@ -58,7 +58,7 @@ describe("updateStatus", () => {
 });
 
 describe("auto-update", () => {
-  beforeEach(() => delete process.env.HUB_AUTO_UPDATE);
+  beforeEach(() => delete process.env.HERMITHUB_AUTO_UPDATE);
   test("off by default, toggles", () => {
     expect(autoUpdate()).toEqual({ enabled: false, fromEnv: false });
     setAutoUpdate(true);
@@ -68,13 +68,13 @@ describe("auto-update", () => {
   });
   test("the environment wins", () => {
     setAutoUpdate(false);
-    process.env.HUB_AUTO_UPDATE = "1";
+    process.env.HERMITHUB_AUTO_UPDATE = "1";
     expect(autoUpdate()).toEqual({ enabled: true, fromEnv: true });
   });
 });
 
 describe("installUpdate", () => {
-  const dir = mkdtempSync(join(tmpdir(), "hub-bin-"));
+  const dir = mkdtempSync(join(tmpdir(), "hermithub-bin-"));
   const binPath = join(dir, "hermithub");
   beforeEach(() => writeFileSync(binPath, "old"));
 

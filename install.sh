@@ -8,14 +8,15 @@
 # --docker runs the container image instead. Re-running it updates an existing install.
 set -euo pipefail
 
-REPO="${HUB_REPO:-suriyadi15/hermithub}"
-BRANCH="${HUB_BRANCH:-main}"
-DIR="${HUB_DIR:-$HOME/hermithub}"
+REPO="${HERMITHUB_REPO:-suriyadi15/hermithub}"
+BRANCH="${HERMITHUB_BRANCH:-main}"
+DIR="${HERMITHUB_DIR:-$HOME/hermithub}"
 DIR_GIVEN=0
-PREFIX="${HUB_PREFIX:-$HOME/.local}"
+PREFIX="${HERMITHUB_PREFIX:-$HOME/.local}"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/hermithub"
 MODE=""
 DOMAIN=""
+PROJECTS=""
 PORT=""
 BIND=""
 VERSION=""
@@ -47,6 +48,7 @@ Docker only:
   --dir PATH        Install folder (default: ~/hermithub)
   --domain NAME     Serve on https://NAME with automatic Let's Encrypt certificates
                     (DNS must point here; ports 80 and 443 must be open)
+  --projects PATH   Keep projects in this host folder instead of <dir>/data/projects
 EOF
 }
 
@@ -57,6 +59,7 @@ while [[ $# -gt 0 ]]; do
     --dir) DIR="$2"; DIR_GIVEN=1; shift 2 ;;
     --prefix) PREFIX="$2"; shift 2 ;;
     --domain) DOMAIN="$2"; shift 2 ;;
+    --projects) PROJECTS="$2"; [[ "$PROJECTS" == /* ]] || PROJECTS="$PWD/$PROJECTS"; shift 2 ;;
     --port) PORT="$2"; shift 2 ;;
     --public) BIND="0.0.0.0"; shift ;;
     --version) VERSION="$2"; shift 2 ;;
@@ -238,7 +241,7 @@ native_deps() {
 
 native_download() {
   local target="$1" base sum tmp
-  if [[ -n "${HUB_DOWNLOAD_URL:-}" ]]; then base="$HUB_DOWNLOAD_URL"
+  if [[ -n "${HERMITHUB_DOWNLOAD_URL:-}" ]]; then base="$HERMITHUB_DOWNLOAD_URL"
   elif [[ -n "$VERSION" ]]; then base="https://github.com/$REPO/releases/download/v${VERSION#v}"
   else base="https://github.com/$REPO/releases/latest/download"
   fi
@@ -280,7 +283,7 @@ HOST=127.0.0.1
 # Header with the client IP behind a proxy: 1 (X-Forwarded-For) or cloudflare
 # TRUST_PROXY=
 # Headless installs only: seed the login password instead of using the setup page.
-# HUB_PASSWORD=
+# HERMITHUB_PASSWORD=
 EOF
   fi
   chmod 600 "$ENV_FILE"
@@ -317,7 +320,7 @@ After=network-online.target
 [Service]
 ExecStart=$RUNNER
 # Tells HermitHub that systemd restarts it, so it can restart itself after an update.
-Environment=HUB_SERVICE=systemd
+Environment=HERMITHUB_SERVICE=systemd
 Restart=on-failure
 RestartSec=3
 # Only stop the server itself: agent sessions run in a tmux server that should outlive restarts and updates.
@@ -352,7 +355,7 @@ native_service_macos() {
 <dict>
   <key>Label</key><string>$PLIST_LABEL</string>
   <key>ProgramArguments</key><array><string>$RUNNER</string></array>
-  <key>EnvironmentVariables</key><dict><key>HUB_SERVICE</key><string>launchd</string></dict>
+  <key>EnvironmentVariables</key><dict><key>HERMITHUB_SERVICE</key><string>launchd</string></dict>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <!-- Agent sessions run in a tmux server that should outlive restarts and updates. -->
@@ -385,8 +388,8 @@ native_uninstall() {
   fi
   # Agent sessions live in their own tmux server; stop it too.
   local socket
-  socket="$(get_env "$ENV_FILE" HUB_TMUX_SOCKET)"
-  tmux -L "${socket:-hub}" kill-server 2>/dev/null || true
+  socket="$(get_env "$ENV_FILE" HERMITHUB_TMUX_SOCKET)"
+  tmux -L "${socket:-hermithub}" kill-server 2>/dev/null || true
   local data
   data="$(get_env "$ENV_FILE" DATA_DIR)"
   data="${data:-$HOME/.hermithub}"
@@ -404,9 +407,11 @@ native_uninstall() {
 
 install_native() {
   [[ $(id -u) -ne 0 ]] || die "Run this as your normal user, not root: HermitHub gives a shell to whoever logs in.
-Create a user first (e.g. adduser hub), or use --docker."
+Create a user first (e.g. adduser hermithub), or use --docker."
   [[ -z "$DOMAIN" ]] || die "--domain (built-in HTTPS) needs --docker. For the standalone install, put a reverse proxy
 in front instead: see docs/reverse-proxy.md."
+  [[ -z "$PROJECTS" ]] || die "--projects needs --docker. For the standalone install, set PROJECTS_DIR in
+$CONFIG_DIR/env instead."
 
   local target
   target="$(native_target)"
@@ -519,28 +524,34 @@ install_docker() {
   curl -fsSL "https://raw.githubusercontent.com/$REPO/$BRANCH/docker-compose.yml" -o docker-compose.yml.new
   mv docker-compose.yml.new docker-compose.yml
 
-  # The hub runs as a normal user, never root: use the invoking user's ids, or 1000 when run as root.
+  # HermitHub runs as a normal user, never root: use the invoking user's ids, or 1000 when run as root.
   if [[ $(id -u) -eq 0 ]]; then PUID=1000 PGID=1000; else PUID=$(id -u) PGID=$(id -g); fi
 
   touch .env
   chmod 600 .env
   grep -q "^PUID=" .env || set_env .env PUID "$PUID"
   grep -q "^PGID=" .env || set_env .env PGID "$PGID"
-  [[ -n "$PORT" ]] && set_env .env HUB_PORT "$PORT"
-  [[ -n "$BIND" ]] && set_env .env HUB_BIND "$BIND"
-  [[ -n "$VERSION" ]] && set_env .env HUB_VERSION "${VERSION#v}"
+  [[ -n "$PORT" ]] && set_env .env HERMITHUB_PORT "$PORT"
+  [[ -n "$BIND" ]] && set_env .env HERMITHUB_BIND "$BIND"
+  [[ -n "$VERSION" ]] && set_env .env HERMITHUB_VERSION "${VERSION#v}"
+  [[ -n "$PROJECTS" ]] && set_env .env HERMITHUB_PROJECTS "$PROJECTS"
   if [[ -n "$DOMAIN" ]]; then
     set_env .env COMPOSE_PROFILES https
-    set_env .env HUB_DOMAIN "$DOMAIN"
+    set_env .env HERMITHUB_DOMAIN "$DOMAIN"
     set_env .env PUBLIC_ORIGIN "https://$DOMAIN"
     set_env .env TRUST_PROXY 1
   fi
 
-  # Create the data folders ourselves, so Docker does not create them owned by root.
+  # Create the data folders ourselves, so Docker does not create them owned by root. data/ becomes the
+  # home folder of the container user.
   PUID=$(get_env .env PUID)
   PGID=$(get_env .env PGID)
-  mkdir -p data/home data/projects data/db
-  if [[ $(id -u) -eq 0 ]]; then chown -R "$PUID:$PGID" data; fi
+  PROJECTS_SET=$(get_env .env HERMITHUB_PROJECTS)
+  mkdir -p data/projects caddy ${PROJECTS_SET:+"$PROJECTS_SET"}
+  if [[ $(id -u) -eq 0 ]]; then
+    chown -R "$PUID:$PGID" data
+    [[ -z "$PROJECTS_SET" ]] || chown "$PUID:$PGID" "$PROJECTS_SET"
+  fi
 
   # ---- start ----
   info "Pulling the image"
@@ -550,21 +561,21 @@ install_docker() {
   fi
   $DOCKER compose up -d
 
-  HOST_PORT=$(get_env .env HUB_PORT)
+  HOST_PORT=$(get_env .env HERMITHUB_PORT)
   HOST_PORT="${HOST_PORT:-8787}"
   wait_healthy "$HOST_PORT" ||
     die "HermitHub did not come up. Check: cd $DIR && $DOCKER compose logs hermithub"
 
-  DOMAIN_SET=$(get_env .env HUB_DOMAIN)
+  DOMAIN_SET=$(get_env .env HERMITHUB_DOMAIN)
   if [[ -n "$DOMAIN_SET" ]]; then URL="https://$DOMAIN_SET"; else URL="http://localhost:${HOST_PORT}"; fi
 
   TOKEN=""
   for _ in $(seq 1 10); do
-    TOKEN=$(cat data/db/setup-token 2>/dev/null || $SUDO cat data/db/setup-token 2>/dev/null || true)
+    TOKEN=$(cat data/.hermithub/setup-token 2>/dev/null || $SUDO cat data/.hermithub/setup-token 2>/dev/null || true)
     [[ -n "$TOKEN" ]] && break
     sleep 1
   done
-  print_access "$URL" "$TOKEN" "$(get_env .env HUB_BIND)" "$HOST_PORT"
+  print_access "$URL" "$TOKEN" "$(get_env .env HERMITHUB_BIND)" "$HOST_PORT"
   cat <<EOF
 
 Manage it from $DIR:
@@ -578,7 +589,7 @@ EOF
 
 # A Docker install from before the rename lives in ~/project-hub; it is moved to the new folder.
 LEGACY_DOCKER_DIR=""
-if [[ -z "${HUB_DIR:-}" && $DIR_GIVEN -eq 0 && ! -e "$DIR" && -f "$HOME/project-hub/docker-compose.yml" ]]; then
+if [[ -z "${HERMITHUB_DIR:-}" && $DIR_GIVEN -eq 0 && ! -e "$DIR" && -f "$HOME/project-hub/docker-compose.yml" ]]; then
   LEGACY_DOCKER_DIR="$HOME/project-hub"
 fi
 

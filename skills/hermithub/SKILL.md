@@ -29,7 +29,7 @@ remote server, run them over `ssh user@host '…'` or in a session there.
 - **Never expose the dashboard over plain HTTP to the internet.** It is a remote shell. Default to
   localhost; use `--domain` (HTTPS) or a tunnel for remote access.
 - **Do not create the dashboard password yourself** unless the user explicitly asks you to (then use
-  `HUB_PASSWORD`, see below). Give the user the setup link instead.
+  `HERMITHUB_PASSWORD`, see below). Give the user the setup link instead.
 - Treat the setup token and passwords as secrets: show them to the user once, do not write them to
   files, commits, issues or chat logs beyond that.
 - Do not log in to agents or GitHub on the user's behalf; those flows are done in the dashboard UI.
@@ -113,14 +113,14 @@ package is private), build from source instead:
 git clone https://github.com/suriyadi15/hermithub ~/hermithub-src
 cd ~/hermithub-src
 printf 'PUID=%s\nPGID=%s\n' "$(id -u)" "$(id -g)" > .env
-mkdir -p data/home data/projects data/db
+mkdir -p data/projects
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 ```
 
 (The first build takes a few minutes.) The install folder is then `~/hermithub-src`.
 
 **Headless password** (only if the user asked you to set it): before the first start add
-`HUB_PASSWORD=<their password>` to `.env` (Docker) or `~/.config/hermithub/env` (standalone); it seeds the
+`HERMITHUB_PASSWORD=<their password>` to `.env` (Docker) or `~/.config/hermithub/env` (standalone); it seeds the
 password and the setup page is skipped.
 
 ## 4. Verify and hand over
@@ -141,7 +141,7 @@ Docker:
 cd ~/hermithub                       # or the folder you used
 docker compose ps                      # hermithub should be "running (healthy)"
 curl -fsS http://127.0.0.1:${PORT:-8787}/api/health    # {"ok":true}
-cat data/db/setup-token                # exists until a password is set
+cat data/.hermithub/setup-token                # exists until a password is set
 ```
 
 Tell the user:
@@ -175,11 +175,11 @@ Docker, run from the install folder:
 |---|---|
 | Update | `docker compose pull && docker compose up -d` (or re-run the installer). Warn: this stops running sessions; conversations can be resumed. Source installs: `git pull && docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build` |
 | Logs | `docker compose logs -f hermithub` |
-| Lost setup link | `cat data/db/setup-token` or `docker compose logs hermithub \| grep setup` |
-| Lost authenticator (2FA) and recovery codes | `docker compose exec -u hub hermithub bun run disable-2fa` (the user should run it) |
-| Forgot password | `docker compose exec -u hub hermithub bun run set-password` (interactive; the user should run it, or pass the new password as an argument only if they asked you to) |
-| Shell in the container | `docker compose exec -u hub hermithub bash -l` — always `-u hub`, never as root |
-| Change port / domain | edit `.env` (`HUB_PORT`, `COMPOSE_PROFILES=https`, `HUB_DOMAIN`, `PUBLIC_ORIGIN=https://<domain>`), then `docker compose up -d` |
+| Lost setup link | `cat data/.hermithub/setup-token` or `docker compose logs hermithub \| grep setup` |
+| Lost authenticator (2FA) and recovery codes | `docker compose exec -u hermithub hermithub bun run disable-2fa` (the user should run it) |
+| Forgot password | `docker compose exec -u hermithub hermithub bun run set-password` (interactive; the user should run it, or pass the new password as an argument only if they asked you to) |
+| Shell in the container | `docker compose exec -u hermithub hermithub bash -l` — always `-u hermithub`, never as root |
+| Change port / domain | edit `.env` (`HERMITHUB_PORT`, `COMPOSE_PROFILES=https`, `HERMITHUB_DOMAIN`, `PUBLIC_ORIGIN=https://<domain>`), then `docker compose up -d` |
 | Stop | `docker compose down` |
 | Uninstall | `docker compose down`, then — **only after explicit confirmation, it deletes all projects and logins** — `rm -rf <install dir>` |
 

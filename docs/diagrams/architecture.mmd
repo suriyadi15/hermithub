@@ -10,10 +10,10 @@ flowchart TB
         agents["Claude Code · Codex CLI<br/>Gemini CLI · bash"]
     end
 
-    subgraph data["./data on the host"]
+    subgraph data["./data on the host = home of the container user"]
         projects[("projects/<br/>your code")]
-        home[("home/<br/>agents, logins,<br/>git & SSH config")]
-        db[("db/<br/>SQLite")]
+        home[("agents, logins,<br/>git & SSH config")]
+        db[(".hermithub/<br/>SQLite")]
     end
 
     cloud["AI providers · GitHub<br/>other git servers"]

@@ -17,7 +17,7 @@ Usage: hermithub [command]
   version         Print the version
 
 Settings come from the environment: PORT (8787), HOST (127.0.0.1), DATA_DIR (~/.hermithub),
-PROJECTS_DIR (~/projects), PUBLIC_ORIGIN, TRUST_PROXY, HUB_AUTO_UPDATE. See docs/configuration.md.`;
+PROJECTS_DIR (~/projects), PUBLIC_ORIGIN, TRUST_PROXY, HERMITHUB_AUTO_UPDATE. See docs/configuration.md.`;
 
 async function doctor() {
   const { DATA_DIR, PROJECTS_DIR } = await import("./paths");
@@ -70,7 +70,7 @@ switch (command) {
   case "version":
   case "--version":
   case "-v":
-    console.log(process.env.HUB_VERSION || pkg.version);
+    console.log(process.env.HERMITHUB_VERSION || pkg.version);
     break;
   case "help":
   case "--help":

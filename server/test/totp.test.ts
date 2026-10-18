@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 // auth.ts opens the database on import: keep it away from the real data folder.
-process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "hub-totp-"));
-process.env.HUB_DB = ":memory:";
+process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "hermithub-totp-"));
+process.env.HERMITHUB_DB = ":memory:";
 const { base32Decode, base32Encode, generateRecoveryCodes, stepAt, totpAt, verifyTotp } = await import("../src/totp");
 const { checkSecondFactor, disableTotp, hashToken, totpEnabled } = await import("../src/auth");
 const { setSetting } = await import("../src/db");

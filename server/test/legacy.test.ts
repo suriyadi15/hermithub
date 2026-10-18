@@ -6,7 +6,7 @@ import { type LegacyEnv, migrateLegacyFiles, migrateLegacyService } from "../src
 
 /** A home folder with a standalone install from before the rename, as install.sh v0.5.0 wrote it. */
 function legacyHome(platform: NodeJS.Platform = "linux") {
-  const home = mkdtempSync(join(tmpdir(), "hub-legacy-"));
+  const home = mkdtempSync(join(tmpdir(), "hermithub-legacy-"));
   const config = join(home, ".config");
   const bin = join(home, ".local/bin/project-hub");
   mkdirSync(join(home, ".local/bin"), { recursive: true });

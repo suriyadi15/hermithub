@@ -1,5 +1,5 @@
 {
-  "name": "@hub/site",
+  "name": "@hermithub/site",
   "private": true,
   "type": "module",
   "scripts": {

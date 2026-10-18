@@ -158,7 +158,7 @@ export async function startSession(input: {
     : input.worktree || null;
   const cwd = projectDir(workspaceId(input.project, worktree));
   if (!(await isDir(cwd))) throw new HttpError(404, "Worktree not found");
-  const name = `hub-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+  const name = `hermithub-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
   const label = input.label?.trim() || worktree || input.project;
   const command = buildCommand(input.mode, {
     permission: input.permission,
@@ -189,7 +189,7 @@ export async function startSession(input: {
 }
 
 async function requireSession(name: string) {
-  if (!/^hub-[a-z0-9]+$/.test(name) || !(await hasSession(name))) throw new HttpError(404, "Session not found");
+  if (!/^hermithub-[a-z0-9]+$/.test(name) || !(await hasSession(name))) throw new HttpError(404, "Session not found");
   const s = (await listSessions()).find((x) => x.name === name);
   if (!s?.project) throw new HttpError(404, "Session not found");
   return s;

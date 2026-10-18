@@ -27,7 +27,7 @@ export async function unwrap<T>(
     const msg =
       typeof value === "string" ? value : (value?.error ?? value?.message ?? `HTTP ${String(res.error.status)}`);
     const status = Number(res.error.status) || 500;
-    if (status === 401) window.dispatchEvent(new Event("hub:unauthorized"));
+    if (status === 401) window.dispatchEvent(new Event("hermithub:unauthorized"));
     throw new ApiError(status, msg, value);
   }
   return res.data as Exclude<T, null>;

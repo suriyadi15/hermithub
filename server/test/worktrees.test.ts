@@ -11,12 +11,12 @@ describe("parseWorktrees", () => {
       "HEAD 1111111111111111111111111111111111111111",
       "branch refs/heads/main",
       "",
-      "worktree /p/.hub-worktrees/app/login",
+      "worktree /p/.hermithub-worktrees/app/login",
       "HEAD 2222222222222222222222222222222222222222",
       "branch refs/heads/feat/login",
       "locked",
       "",
-      "worktree /p/.hub-worktrees/app/old",
+      "worktree /p/.hermithub-worktrees/app/old",
       "HEAD 3333333333333333333333333333333333333333",
       "detached",
       "prunable gitdir file points to non-existent location",
@@ -24,8 +24,8 @@ describe("parseWorktrees", () => {
     ].join("\n");
     expect(parseWorktrees(out)).toEqual([
       { path: "/p/app", head: "1".repeat(40), branch: "main", bare: false, locked: false, prunable: false },
-      { path: "/p/.hub-worktrees/app/login", head: "2".repeat(40), branch: "feat/login", bare: false, locked: true, prunable: false },
-      { path: "/p/.hub-worktrees/app/old", head: "3".repeat(40), branch: null, bare: false, locked: false, prunable: true },
+      { path: "/p/.hermithub-worktrees/app/login", head: "2".repeat(40), branch: "feat/login", bare: false, locked: true, prunable: false },
+      { path: "/p/.hermithub-worktrees/app/old", head: "3".repeat(40), branch: null, bare: false, locked: false, prunable: true },
     ]);
   });
   test("empty output", () => {
@@ -38,7 +38,7 @@ describe("parseWorktrees", () => {
  * its own process with a temporary projects folder.
  */
 describe("worktree flow", () => {
-  const tmp = mkdtempSync(join(tmpdir(), "hub-wt-"));
+  const tmp = mkdtempSync(join(tmpdir(), "hermithub-wt-"));
   afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
   test("create, list, use, rename project, remove", async () => {
@@ -76,8 +76,8 @@ console.log(JSON.stringify(out));
         ...process.env,
         PROJECTS_DIR: join(tmp, "projects"),
         DATA_DIR: join(tmp, "data"),
-        HUB_DB: ":memory:",
-        HUB_TMUX_SOCKET: `hub-test-${process.pid}`,
+        HERMITHUB_DB: ":memory:",
+        HERMITHUB_TMUX_SOCKET: `hermithub-test-${process.pid}`,
       },
       stdout: "pipe",
       stderr: "pipe",

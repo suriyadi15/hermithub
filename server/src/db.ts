@@ -1,11 +1,20 @@
 import { Database } from "bun:sqlite";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { DATA_DIR } from "./paths";
 
 mkdirSync(DATA_DIR, { recursive: true });
 
-export const db = new Database(process.env.HUB_DB ?? join(DATA_DIR, "hub.db"), { create: true });
+// Versions up to 0.7 named the database hub.db.
+const DB_FILE = join(DATA_DIR, "hermithub.db");
+const OLD_DB_FILE = join(DATA_DIR, "hub.db");
+if (!process.env.HERMITHUB_DB && existsSync(OLD_DB_FILE) && !existsSync(DB_FILE)) {
+  for (const suffix of ["", "-wal", "-shm"]) {
+    if (existsSync(OLD_DB_FILE + suffix)) renameSync(OLD_DB_FILE + suffix, DB_FILE + suffix);
+  }
+}
+
+export const db = new Database(process.env.HERMITHUB_DB ?? DB_FILE, { create: true });
 db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;");
 
 db.exec(`

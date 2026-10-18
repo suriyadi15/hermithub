@@ -3,7 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-const backend = process.env.HUB_BACKEND ?? "http://127.0.0.1:8787";
+const backend = process.env.HERMITHUB_BACKEND ?? "http://127.0.0.1:8787";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],

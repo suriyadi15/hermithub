@@ -1,5 +1,5 @@
 {
-  "name": "@hub/web",
+  "name": "@hermithub/web",
   "private": true,
   "type": "module",
   "scripts": {

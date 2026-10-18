@@ -7,12 +7,12 @@ import { findLoginHints, findRemoteUrl, parseScrollFrame, parseSessions, tailLin
 
 describe("tmux", () => {
   test("parseSessions reads our format and skips foreign sessions", () => {
-    const line = ["hub-abc", "1700000000", "1700000100", "1", "0", "", "42", "demo", "claude", "plan", "fitur x", "claude"].join(
+    const line = ["hermithub-abc", "1700000000", "1700000100", "1", "0", "", "42", "demo", "claude", "plan", "fitur x", "claude"].join(
       "||hub||",
     );
     const [s, ...rest] = parseSessions(`${line}\nother||hub||1\n`);
     expect(rest).toHaveLength(0);
-    expect(s).toMatchObject({ name: "hub-abc", created: 1700000000000, attached: 1, dead: false, pid: 42, project: "demo", mode: "claude", permission: "plan", label: "fitur x" });
+    expect(s).toMatchObject({ name: "hermithub-abc", created: 1700000000000, attached: 1, dead: false, pid: 42, project: "demo", mode: "claude", permission: "plan", label: "fitur x" });
   });
   test("findRemoteUrl returns the last claude.ai/code link", () => {
     const text = "old https://claude.ai/code/session_1\nConnect: https://claude.ai/code/session_2?x=1 \n";
