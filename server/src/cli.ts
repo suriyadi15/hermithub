@@ -11,6 +11,7 @@ Usage: hermithub [command]
   serve           Start the dashboard (default)
   set-password    Set a new login password (signs out every session)
   disable-2fa     Turn off two-factor authentication
+  tunnel          Open a public https address for this dashboard via Cloudflare (no account; --port N)
   doctor          Check the tools HermitHub needs
   update          Install the latest release (--check: only check, --version vX.Y.Z, -y: no prompt)
   auto-update     Install new releases automatically: on, off or status
@@ -63,6 +64,9 @@ switch (command) {
     break;
   case "auto-update":
     (await import("./admin")).autoUpdateCommand(args[0]);
+    break;
+  case "tunnel":
+    await (await import("./tunnel")).tunnelCommand(args);
     break;
   case "doctor":
     await doctor();

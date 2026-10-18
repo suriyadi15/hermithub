@@ -115,7 +115,9 @@ print_access() {
   fi
   if [[ "$url" != https://* && "$bind" != "0.0.0.0" ]]; then
     echo
-    echo "The dashboard only listens on this machine. From another computer, use an SSH tunnel:"
+    echo "The dashboard only listens on this machine. For a public https address (no account needed), run:"
+    echo "  hermithub tunnel"
+    echo "Or from another computer, use an SSH tunnel:"
     echo "  ssh -L ${port}:localhost:${port} $(id -un)@<this-server>"
     echo "or put it behind HTTPS. See docs/reverse-proxy.md."
   fi

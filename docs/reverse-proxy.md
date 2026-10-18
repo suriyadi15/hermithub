@@ -62,6 +62,18 @@ If the proxy runs in another container, attach it to the hub's network or use `H
 
 No open ports, and Cloudflare Access can add a second login (recommended):
 
+Standalone install on a laptop, no account or domain needed:
+
+```bash
+hermithub tunnel            # prints https://<random>.trycloudflare.com until you press Ctrl+C
+```
+
+It downloads `cloudflared` into `~/.hermithub/bin` on first use (or uses the one on your `PATH`). The address is random
+and changes on every run; for a fixed address use a named tunnel or Tailscale. Set a strong password and enable 2FA
+first: anyone with the link reaches the login page.
+
+Manual alternatives:
+
 ```bash
 cloudflared tunnel --url http://localhost:8787            # quick test
 # or a named tunnel with ingress: service: http://localhost:8787

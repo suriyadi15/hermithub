@@ -65,6 +65,9 @@ The installer detects your OS and CPU, installs tmux and git if they are missing
 it prints a link like `http://localhost:8787/setup?token=…`. Open it, choose a password, then go to **Settings**
 to install an agent and connect GitHub.
 
+No URL, or want it on your phone? Run `hermithub tunnel` for a public `https://….trycloudflare.com` address (no
+account or domain needed). Set a strong password and 2FA first, see [Remote access](docs/reverse-proxy.md).
+
 Prefer Docker? It keeps agents isolated from the host, and on a server with a domain name it gets you HTTPS with
 automatic certificates:
 
