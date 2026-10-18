@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 — 2026-10-18
 
 - **Project Hub is now HermitHub.** The repository is `suriyadi15/hermithub`, the command `hermithub`, the image
   `ghcr.io/suriyadi15/hermithub`, the data folder `~/.hermithub`, the settings `~/.config/hermithub`, the service
