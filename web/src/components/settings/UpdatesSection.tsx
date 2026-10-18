@@ -114,7 +114,7 @@ export function UpdatesSection() {
           </label>
           <p className="text-xs text-muted-foreground">
             {s.auto.fromEnv
-              ? "Set by HUB_AUTO_UPDATE in the environment; change it in ~/.config/hermithub/env."
+              ? "Set by HERMITHUB_AUTO_UPDATE in the environment; change it in ~/.config/hermithub/env."
               : "Checked every 6 hours. The server restarts on its own; running agent sessions keep going."}{" "}
             From a terminal: <code className="font-mono">hermithub update</code>,{" "}
             <code className="font-mono">hermithub auto-update on|off</code>.

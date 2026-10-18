@@ -21,7 +21,7 @@ export default defineConfig({
       sidebar: [
         {
           label: "Getting started",
-          items: ["docs/installation", "docs/ai-install", "docs/configuration"],
+          items: ["docs/installation", "docs/one-click-deploy", "docs/ai-install", "docs/configuration"],
         },
         {
           label: "Using HermitHub",

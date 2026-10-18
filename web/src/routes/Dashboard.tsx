@@ -41,7 +41,7 @@ function Stat({ icon: Icon, label, value, sub, pct }: { icon: typeof Cpu; label:
   );
 }
 
-const SHOW_HIDDEN_KEY = "hub:show-hidden-projects";
+const SHOW_HIDDEN_KEY = "hermithub:show-hidden-projects";
 
 function readShowHidden() {
   try {

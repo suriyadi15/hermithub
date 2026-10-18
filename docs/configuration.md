@@ -15,11 +15,11 @@ Settings live in `~/.config/hermithub/env` (written by the installer). Restart t
 | `PROJECTS_DIR` | `~/projects` | Where projects live |
 | `PUBLIC_ORIGIN` | – | Public URL(s) behind a reverse proxy, as below |
 | `TRUST_PROXY` | – | Client IP header behind a proxy, as below |
-| `HUB_PASSWORD` | – | Seeds the password on first start instead of the setup page |
-| `HUB_TMUX_SOCKET` | `hub` | Name of the private tmux server (`tmux -L hub ls` lists the sessions) |
-| `HUB_AUTO_UPDATE` | – | `1` / `0` turns automatic updates on / off, overriding the switch in Settings and `hermithub auto-update` |
-| `HUB_UPDATE_CHECK` | `1` | `0` stops the release check every 6 hours (and with it automatic updates) |
-| `HUB_REPO` | `suriyadi15/hermithub` | GitHub repository releases and updates come from (for forks) |
+| `HERMITHUB_PASSWORD` | – | Seeds the password on first start instead of the setup page |
+| `HERMITHUB_TMUX_SOCKET` | `hermithub` | Name of the private tmux server (`tmux -L hermithub ls` lists the sessions) |
+| `HERMITHUB_AUTO_UPDATE` | – | `1` / `0` turns automatic updates on / off, overriding the switch in Settings and `hermithub auto-update` |
+| `HERMITHUB_UPDATE_CHECK` | `1` | `0` stops the release check every 6 hours (and with it automatic updates) |
+| `HERMITHUB_REPO` | `suriyadi15/hermithub` | GitHub repository releases and updates come from (for forks) |
 
 The service starts through `~/.config/hermithub/run.sh`, which the installer regenerates. It puts `~/.local/bin`
 and the usual system folders on `PATH`, and sets `NPM_CONFIG_PREFIX=~/.local` so agents installed from the dashboard
@@ -35,36 +35,46 @@ The `.env` file next to `docker-compose.yml` holds these:
 | Variable | Default | Meaning |
 |---|---|---|
 | `PUID`, `PGID` | `1000` | Host user/group that owns `data/`. Files created from the dashboard get this owner. The installer sets them to your user. |
-| `HUB_PORT` | `8787` | Host port of the dashboard |
-| `HUB_BIND` | `127.0.0.1` | Host address to listen on. `0.0.0.0` exposes it on all interfaces. |
+| `HERMITHUB_PORT` | `8787` | Host port of the dashboard |
+| `HERMITHUB_BIND` | `127.0.0.1` | Host address to listen on. `0.0.0.0` exposes it on all interfaces. |
 | `COMPOSE_PROFILES` | – | `https` enables the bundled Caddy reverse proxy |
-| `HUB_DOMAIN` | – | Domain for the bundled Caddy (automatic Let's Encrypt) |
+| `HERMITHUB_DOMAIN` | – | Domain for the bundled Caddy (automatic Let's Encrypt) |
 | `PUBLIC_ORIGIN` | – | Public URL(s), comma separated, e.g. `https://hub.example.com`. Needed when a proxy rewrites the `Host` header; also forces `Secure` cookies. |
 | `TRUST_PROXY` | – | Header with the client IP for the login lockout: `1` = last `X-Forwarded-For` entry (Caddy, nginx, Traefik), `cloudflare` = `CF-Connecting-IP`. Empty: forwarded headers are ignored. Only set it when the port is reachable through that proxy alone. |
-| `HUB_DATA` | `./data` | Where `home/` and `db/` live |
-| `HUB_PROJECTS` | `./data/projects` | Where projects live |
-| `HUB_VERSION` | `latest` | Image tag |
-| `HUB_IMAGE` | `ghcr.io/suriyadi15/hermithub` | Image name (for forks) |
-| `HUB_PASSWORD` | – | Seeds the password on first start instead of the setup page |
+| `HERMITHUB_DATA` | `./data` | Host folder mounted as the home of the container user (everything lives here) |
+| `HERMITHUB_PROJECTS` | `$HERMITHUB_DATA/projects` | Host folder for projects, if not inside `HERMITHUB_DATA` |
+| `HERMITHUB_CADDY` | `./caddy` | Certificates of the bundled Caddy |
+| `HERMITHUB_VERSION` | `latest` | Image tag |
+| `HERMITHUB_IMAGE` | `ghcr.io/suriyadi15/hermithub` | Image name (for forks) |
+| `HERMITHUB_PASSWORD` | – | Seeds the password on first start instead of the setup page |
 
 Apply changes with `docker compose up -d`.
 
 ## Data folders
 
+Everything lives in one folder, `data/`, mounted as `/home/hermithub`, the home of the container user. It is laid
+out like the home of a standalone install:
+
 | Path in the container | Host (default) | Contents |
 |---|---|---|
-| `/home/hub` | `data/home` | Agents (`~/.local`), their logins (`~/.claude`, `~/.codex`, `~/.gemini`, `~/.copilot`, `~/.qwen`, `~/.local/share/opencode`, `~/.local/share/crush`), `~/.config/gh`, `~/.gitconfig`, `~/.ssh` |
-| `/home/hub/projects` | `data/projects` | Projects |
-| `/data` | `data/db` | SQLite database |
+| `/home/hermithub/.hermithub` | `data/.hermithub` | SQLite database (`hermithub.db`), setup token, tmux config |
+| `/home/hermithub/projects` | `data/projects` | Projects |
+| `/home/hermithub` | `data` | Agents (`~/.local`), their logins (`~/.claude`, `~/.codex`, `~/.gemini`, `~/.copilot`, `~/.qwen`, `~/.local/share/opencode`, `~/.local/share/crush`), `~/.config/gh`, `~/.gitconfig`, `~/.ssh` |
+
+One volume is all the image needs, which is what hosting platforms (Railway, Render, Coolify, ...) offer; see
+[One-click deploy](one-click-deploy.md).
 
 To keep projects elsewhere, e.g. an existing folder:
 
 ```bash
-echo "HUB_PROJECTS=/srv/code" >> .env
+echo "HERMITHUB_PROJECTS=/srv/code" >> .env
 docker compose up -d
 ```
 
-The folder must be owned by `PUID`/`PGID`.
+The folder must be owned by `PUID`/`PGID`. With the installer: `install.sh --docker --projects /srv/code`.
+
+Inside the container, `PROJECTS_DIR` moves the projects folder too (e.g. onto a second volume on a hosting
+platform). Unlike `/home/hermithub/projects`, its ownership is not fixed at start.
 
 ## Resource limits
 
@@ -83,10 +93,10 @@ services:
 The web terminal is the easiest. From the host:
 
 ```bash
-docker compose exec -u hub hermithub bash -l
+docker compose exec -u hermithub hermithub bash -l
 ```
 
-Always pass `-u hub`; as root you would create files the dashboard cannot change.
+Always pass `-u hermithub`; as root you would create files the dashboard cannot change.
 
 ## Extra system packages
 
@@ -97,5 +107,5 @@ FROM ghcr.io/suriyadi15/hermithub:latest
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv && rm -rf /var/lib/apt/lists/*
 ```
 
-and point `HUB_IMAGE`/`HUB_VERSION` at your image (or use `build:` in an override file). Tools installed
+and point `HERMITHUB_IMAGE`/`HERMITHUB_VERSION` at your image (or use `build:` in an override file). Tools installed
 from the web terminal into `~/.local` (e.g. `npm i -g`, `pip install --user`, `uv`) persist without a custom image.

@@ -12,7 +12,7 @@ import {
   verifyTotp,
 } from "./totp";
 
-export const COOKIE = "hub_session";
+export const COOKIE = "hermithub_session";
 const SESSION_TTL = 30 * 24 * 3600 * 1000;
 const MAX_FAILS = 5;
 const FAIL_WINDOW = 15 * 60 * 1000;
@@ -22,8 +22,8 @@ const MAX_GLOBAL_FAILS = 30;
 /** Seed the password from the environment (headless installs); the DB value wins afterwards. */
 export async function ensurePassword() {
   if (getSetting("password_hash")) return true;
-  const hash = process.env.HUB_PASSWORD_HASH;
-  const plain = process.env.HUB_PASSWORD;
+  const hash = process.env.HERMITHUB_PASSWORD_HASH;
+  const plain = process.env.HERMITHUB_PASSWORD;
   if (hash) setSetting("password_hash", hash);
   else if (plain) setSetting("password_hash", await Bun.password.hash(plain));
   else return false;
@@ -153,6 +153,15 @@ export function originOk(request: Request): boolean {
   } catch {
     return false;
   }
+}
+
+/** Where the dashboard is reached from outside, for the setup link: PUBLIC_ORIGIN, else the domain a host platform assigned. */
+export function publicOrigin(env: Record<string, string | undefined>, port: number) {
+  const configured = (env.PUBLIC_ORIGIN ?? "").split(",")[0]?.trim();
+  if (configured) return configured;
+  if (env.RAILWAY_PUBLIC_DOMAIN) return `https://${env.RAILWAY_PUBLIC_DOMAIN}`;
+  if (env.RENDER_EXTERNAL_URL) return env.RENDER_EXTERNAL_URL.replace(/\/$/, "");
+  return `http://localhost:${port}`;
 }
 
 function isHttps(request: Request) {

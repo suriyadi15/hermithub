@@ -31,8 +31,8 @@ docker compose logs --tail 100 hermithub
 
 | Log shows | Cause | Fix |
 |---|---|---|
-| `EACCES` / `permission denied` on `/data` or `/home/hub` | `data/` owned by another user than `PUID`/`PGID` | `grep -E 'PUID|PGID' .env` and `ls -ln data`; fix with `sudo chown -R <PUID>:<PGID> data/home data/db`, then `docker compose up -d` |
-| `address already in use` | Port taken | Set another `HUB_PORT` in `.env`, `docker compose up -d` |
+| `EACCES` / `permission denied` on `/home/hermithub` | `data/` owned by another user than `PUID`/`PGID` | `grep -E 'PUID|PGID' .env` and `ls -ln data`; fix with `sudo chown -R <PUID>:<PGID> data`, then `docker compose up -d` |
+| `address already in use` | Port taken | Set another `HERMITHUB_PORT` in `.env`, `docker compose up -d` |
 | `exec format error` | Image for another CPU architecture | Pull again (`docker compose pull`); images are amd64 + arm64. On other architectures build from source. |
 | nothing useful, exits immediately | Corrupt or old compose file | Re-run the installer (it refreshes `docker-compose.yml`) |
 
@@ -61,9 +61,9 @@ available to you yet. Use the build-from-source steps in SKILL.md. Behind a prox
 ## Setup / login
 
 - Setup page says "Invalid setup token": the token changes on every container start while no password
-  exists. Read the current one: `cat data/db/setup-token`.
+  exists. Read the current one: `cat data/.hermithub/setup-token`.
 - "Setup is already done": a password exists. Use the login page, or reset it:
-  `docker compose exec -u hub hermithub bun run set-password`.
+  `docker compose exec -u hermithub hermithub bun run set-password`.
 - "Too many attempts": wait 15 minutes or restart the container.
 
 ## Agents (Settings → AI agents)
@@ -81,7 +81,7 @@ available to you yet. Use the build-from-source steps in SKILL.md. Behind a prox
 ## Sessions disappeared
 
 Recreating the container (update, `.env` change + `docker compose up -d`) ends all tmux sessions.
-Conversations are kept in `data/home`; on the project page use **Resume** / "Continue the last conversation".
+Conversations are kept in `data`; on the project page use **Resume** / "Continue the last conversation".
 
 ## GitHub
 

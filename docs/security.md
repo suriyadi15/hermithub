@@ -7,7 +7,7 @@ GitHub token and SSH key. Treat the password like an SSH key.
 ## What protects it
 
 - **Localhost by default.** The port is bound to `127.0.0.1`; reaching it from elsewhere needs a proxy,
-  tunnel or an explicit `HUB_BIND`.
+  tunnel or an explicit `HERMITHUB_BIND`.
 - **Setup token.** Until a password exists, setting one requires a random token printed in the server logs,
   so whoever reaches the port first cannot claim the instance.
 - **Password login** (argon2 hash), `HttpOnly`, `SameSite=Strict` cookies, `Secure` over HTTPS. After 5 failed
@@ -25,9 +25,9 @@ GitHub token and SSH key. Treat the password like an SSH key.
   mounted except the data folders, and agent and GitHub logins are separate from the host's.
 - **Standalone executable: no isolation.** Agents run as your user and can reach everything that user can:
   other folders, `~/.ssh`, cloud CLIs and their credentials. The installer refuses to run as root. For a shared or
-  internet-facing server, prefer Docker or a dedicated user account (e.g. `adduser hub`) for the hub.
+  internet-facing server, prefer Docker or a dedicated user account (e.g. `adduser hermithub`) for the hub.
 
-- **Updates** come only from the GitHub releases of the repository (`HUB_REPO`) over HTTPS. The executable is
+- **Updates** come only from the GitHub releases of the repository (`HERMITHUB_REPO`) over HTTPS. The executable is
   installed only when it matches the release's `SHA256SUMS` and starts. Installing an update needs a logged-in
   session, like everything else. Automatic updates are off unless you turn them on.
 
@@ -39,7 +39,7 @@ GitHub token and SSH key. Treat the password like an SSH key.
 - Prefer permission modes that ask before running commands. "Bypass" / "YOLO" modes let an agent do anything
   the container user can do, including pushing with your GitHub login.
 - Give GitHub tokens only the scopes you need; fine-grained tokens limited to some repositories work too.
-- API keys and the two-factor secret are stored in plain text in `data/db/hub.db` and visible to processes in the container. Keep the
+- API keys and the two-factor secret are stored in plain text in `data/.hermithub/hermithub.db` and visible to processes in the container. Keep the
   data folder private (`chmod 700`) and out of shared backups.
 - Set `mem_limit` so a runaway process cannot take down the host.
 
@@ -48,7 +48,7 @@ GitHub token and SSH key. Treat the password like an SSH key.
 Log in with a recovery code. If you have none left, turn two-factor authentication off from the server:
 
 ```bash
-docker compose exec -u hub hermithub bun run disable-2fa
+docker compose exec -u hermithub hermithub bun run disable-2fa
 ```
 
 ## Reporting vulnerabilities

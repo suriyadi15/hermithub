@@ -85,7 +85,7 @@ tail -f ~/Library/Logs/hermithub.log
 launchctl kickstart -k gui/$(id -u)/dev.hermithub
 ```
 
-Agent sessions run in their own tmux server (`tmux -L hub`), which is not stopped when the service restarts
+Agent sessions run in their own tmux server (`tmux -L hermithub`), which is not stopped when the service restarts
 or updates. Running sessions keep going.
 
 The executable has a few commands of its own:
@@ -123,7 +123,7 @@ hermithub auto-update off
 hermithub auto-update status
 ```
 
-`HUB_AUTO_UPDATE=1` or `0` in `~/.config/hermithub/env` overrides that switch, and `HUB_UPDATE_CHECK=0` stops
+`HERMITHUB_AUTO_UPDATE=1` or `0` in `~/.config/hermithub/env` overrides that switch, and `HERMITHUB_UPDATE_CHECK=0` stops
 the checks altogether. Automatic installs only happen when HermitHub runs as a service, so it can be restarted.
 
 Re-running the installer also updates (and repairs the service files).
@@ -175,7 +175,7 @@ Example: `curl -fsSL …/install.sh | bash -s -- --docker --domain hub.example.c
 mkdir hermithub && cd hermithub
 curl -fsSLO https://raw.githubusercontent.com/suriyadi15/hermithub/main/docker-compose.yml
 printf 'PUID=%s\nPGID=%s\n' "$(id -u)" "$(id -g)" > .env
-mkdir -p data/home data/projects data/db
+mkdir -p data/projects
 docker compose up -d
 ```
 
@@ -194,23 +194,23 @@ Open the setup link printed by the installer. Lost it? Any of these show it agai
 
 ```bash
 cat ~/.hermithub/setup-token                        # standalone
-cat ~/hermithub/data/db/setup-token                 # Docker
+cat ~/hermithub/data/.hermithub/setup-token         # Docker
 cd ~/hermithub && docker compose logs hermithub | grep setup
 ```
 
 The token only works until a password is set. For automated installs you can skip the setup page by
-putting `HUB_PASSWORD=…` in the env file (standalone) or `.env` (Docker) before the first start.
+putting `HERMITHUB_PASSWORD=…` in the env file (standalone) or `.env` (Docker) before the first start.
 
 Forgot the password:
 
 ```bash
 hermithub set-password                                          # standalone
-docker compose exec -u hub hermithub bun run set-password       # Docker
+docker compose exec -u hermithub hermithub bun run set-password       # Docker
 ```
 
 Lost the phone with your authenticator app and have no recovery codes left:
 
 ```bash
 hermithub disable-2fa                                           # standalone
-docker compose exec -u hub hermithub bun run disable-2fa        # Docker
+docker compose exec -u hermithub hermithub bun run disable-2fa        # Docker
 ```

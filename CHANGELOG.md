@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased
+
+- **One volume for Docker, and one-click deploy.** The image keeps everything in the home of the container
+  user, `/home/hermithub`, laid out like a standalone install: database in `~/.hermithub`, projects in
+  `~/projects`. With a single volume it runs on hosting platforms: a Render Blueprint (`render.yaml`), a
+  Coolify template (`deploy/coolify/`) and the values for a Railway template (`deploy/railway.md`). See
+  [docs/one-click-deploy.md](docs/one-click-deploy.md). `HERMITHUB_PROJECTS` (or `install.sh --projects DIR`)
+  still keeps projects in another host folder. The setup link in the logs uses the domain Railway or Render
+  assigned.
+- **The remaining `hub` names are now `hermithub`**: the container user and its home (`/home/hermithub`), every
+  `HUB_*` variable (`HERMITHUB_PASSWORD`, `HERMITHUB_PORT`, ...), the tmux server (`tmux -L hermithub`) and its
+  sessions, the database file (`hermithub.db`, renamed on start), `.hermithub-trash` and `.hermithub-worktrees`
+  in the projects folder, and the session cookie (log in again).
+- **Breaking for Docker installs**: move the data once, with the container stopped:
+  ```bash
+  cd ~/hermithub && docker compose down
+  mv data/home/{.[!.],}* data/ && rmdir data/home
+  mkdir -p data/.hermithub && mv data/db/* data/.hermithub/ && rmdir data/db
+  [ -d data/caddy ] && mv data/caddy caddy
+  cd data/projects && mv .hub-trash .hermithub-trash; mv .hub-worktrees .hermithub-worktrees; cd ../..
+  # Claude Code keys its history by path
+  (cd data/.claude/projects && for d in -home-hub-*; do mv "$d" "${d/-home-hub-/-home-hermithub-}"; done)
+  sed -i 's|/home/hub/|/home/hermithub/|g' data/.claude.json
+  sed -i 's/^HUB_/HERMITHUB_/' .env
+  curl -fsSLO https://raw.githubusercontent.com/suriyadi15/hermithub/main/docker-compose.yml
+  docker compose pull && docker compose up -d
+  ```
+  Then run `git worktree repair` in projects that have worktrees. Standalone installs: rename `HUB_*` in
+  `~/.config/hermithub/env` and re-run the installer to refresh the service; folders inside `~/projects` move as
+  above.
+
 ## 0.7.0 — 2026-10-18
 
 - **Favorite and hide projects.** Star a project on the Dashboard to pin it in a "Favorites" group at the top.

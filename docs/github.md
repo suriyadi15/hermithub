@@ -14,7 +14,7 @@ session — including **New project → Clone from URL** for private repositorie
 **Use a token** instead: create a [personal access token](https://github.com/settings/tokens/new?scopes=repo,read:org,workflow&description=Project%20Hub)
 with the `repo`, `read:org` and `workflow` scopes and paste it.
 
-The login is stored in `data/home/.config/gh`. Agents can use `gh` too (e.g. to open pull requests).
+The login is stored in `data/.config/gh`. Agents can use `gh` too (e.g. to open pull requests).
 
 ## Git identity
 

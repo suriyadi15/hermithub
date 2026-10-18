@@ -12,7 +12,7 @@ server/            Bun + Elysia backend
   src/worktrees.ts git worktrees per project (parallel tasks) + /api/projects/:project/worktrees
   src/integrations.ts  GitHub, git identity, SSH key
   src/terminal.ts  WebSocket ⇄ tmux attach bridge
-  src/tmux.ts      tmux helpers (dedicated socket "hub")
+  src/tmux.ts      tmux helpers (dedicated socket "hermithub")
   src/auth.ts      setup token, password login, cookies, origin check
   src/files.ts, git.ts, search.ts, projects.ts, paths.ts
 web/               React 19 + Vite frontend (Eden Treaty client typed from the server)
@@ -63,7 +63,7 @@ bun run build:bin linux-arm64  # specific targets
 It builds the frontend and compiles `server/src/cli.ts` with `bun build --compile`. A generated entry point embeds
 every `web/dist` file (`server/src/web-embed.ts`), so the executable needs nothing next to it. `web/dist` on disk
 (or `WEB_DIST`) still takes priority when it exists. Test the install script against a local build with
-`HUB_DOWNLOAD_URL=file://$PWD/dist bash install.sh`.
+`HERMITHUB_DOWNLOAD_URL=file://$PWD/dist bash install.sh`.
 
 ## Checks
 

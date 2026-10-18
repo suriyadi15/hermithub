@@ -46,7 +46,7 @@ export default function Setup({ onDone }: { onDone: () => void }) {
             <Input id="token" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} />
             <p className="text-xs text-muted-foreground">
               Printed by the installer and in <code className="font-mono">docker compose logs hermithub</code>, and
-              stored in <code className="font-mono">data/db/setup-token</code>.
+              stored in <code className="font-mono">data/.hermithub/setup-token</code>.
             </p>
           </div>
         )}

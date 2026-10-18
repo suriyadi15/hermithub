@@ -2,16 +2,16 @@
 
 ## Sharing folders with the host
 
-By default nothing from the host is mounted. To work on host folders or reuse host logins, add a
+By default nothing from the host is mounted. For projects in a host folder, set `HERMITHUB_PROJECTS` (see
+[Configuration](configuration.md#data-folders)). To reuse host logins or mount other folders, add a
 `docker-compose.override.yml` next to `docker-compose.yml` (it is merged automatically):
 
 ```yaml
 services:
   hermithub:
     volumes:
-      - /home/me/code:/home/hub/projects        # host projects instead of data/projects
-      - /home/me/.claude:/home/hub/.claude      # share Claude login + history with the host
-      - /home/me/.claude.json:/home/hub/.claude.json
+      - /home/me/.claude:/home/hermithub/.claude      # share Claude login + history with the host
+      - /home/me/.claude.json:/home/hermithub/.claude.json
 ```
 
 Notes:
@@ -20,7 +20,7 @@ Notes:
 - Create files before mounting them (`touch ~/.claude.json`); otherwise Docker creates a directory.
 - Mount directories rather than single files when a tool rewrites the file by renaming
   (`~/.config/gh`, `~/.config/git`).
-- Claude Code stores history per absolute path. Inside the container projects are at `/home/hub/projects/<name>`,
+- Claude Code stores history per absolute path. Inside the container projects are at `/home/hermithub/projects/<name>`,
   so `--continue` only finds conversations started at that path.
 
 ## Migrating from a host install
@@ -29,20 +29,20 @@ To move an existing setup (projects in `~/projects`, Claude logged in on the hos
 
 ```bash
 cd ~/hermithub && docker compose down
-mkdir -p data/home data/projects
+mkdir -p data/projects
 cp -a ~/projects/. data/projects/
-cp -a ~/.claude data/home/ && cp ~/.claude.json data/home/
-# Claude keys history by path: rename /home/<you>/projects/... to /home/hub/projects/...
-cd data/home/.claude/projects
-for d in -home-"$USER"-projects-*; do mv "$d" "-home-hub-projects-${d#-home-$USER-projects-}"; done
+cp -a ~/.claude data/ && cp ~/.claude.json data/
+# Claude keys history by path: rename /home/<you>/projects/... to /home/hermithub/projects/...
+cd data/.claude/projects
+for d in -home-"$USER"-projects-*; do mv "$d" "-home-hermithub-projects-${d#-home-$USER-projects-}"; done
 cd ~/hermithub && docker compose up -d
 ```
 
-Then reconnect GitHub in Settings (or copy `~/.config/gh` to `data/home/.config/gh`).
+Then reconnect GitHub in Settings (or copy `~/.config/gh` to `data/.config/gh`).
 
 ## Running several instances
 
-Use separate folders with different `HUB_PORT` values and set `name:` / `container_name` in an override
+Use separate folders with different `HERMITHUB_PORT` values and set `name:` / `container_name` in an override
 file so they do not clash.
 
 ## Behind a corporate proxy

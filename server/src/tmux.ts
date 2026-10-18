@@ -4,7 +4,7 @@ import { exec } from "./exec";
 import { DATA_DIR } from "./paths";
 
 /** Dedicated tmux server so hub sessions never mix with a user's own tmux. */
-export const TMUX_SOCKET = process.env.HUB_TMUX_SOCKET ?? "hub";
+export const TMUX_SOCKET = process.env.HERMITHUB_TMUX_SOCKET ?? "hermithub";
 /** tmux escapes control characters in -F output, so use a printable separator. */
 const SEP = "||hub||";
 
@@ -77,7 +77,7 @@ const FORMAT = [
 export function parseSessions(out: string): TmuxSession[] {
   return out
     .split("\n")
-    .filter((l) => l.startsWith("hub-"))
+    .filter((l) => l.startsWith("hermithub-"))
     .map((line) => {
       const [name, created, activity, attached, dead, deadStatus, pid, project, mode, permission, label, command, task, worktree] =
         line.split(SEP);

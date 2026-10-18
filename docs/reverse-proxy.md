@@ -10,7 +10,7 @@ For a server with a public IP and a domain pointing to it:
 ```bash
 ./install.sh --domain hub.example.com      # or set these in .env:
 # COMPOSE_PROFILES=https
-# HUB_DOMAIN=hub.example.com
+# HERMITHUB_DOMAIN=hub.example.com
 # PUBLIC_ORIGIN=https://hub.example.com
 # TRUST_PROXY=1
 docker compose up -d
@@ -56,7 +56,7 @@ server {
 }
 ```
 
-If the proxy runs in another container, attach it to the hub's network or use `HUB_BIND=0.0.0.0` with a firewall.
+If the proxy runs in another container, attach it to the hub's network or use `HERMITHUB_BIND=0.0.0.0` with a firewall.
 
 ## Cloudflare Tunnel
 
@@ -71,7 +71,7 @@ Set `PUBLIC_ORIGIN=https://<your-hostname>` and `TRUST_PROXY=cloudflare` in `.en
 
 ## Tailscale / VPN
 
-Install Tailscale on the host and set `HUB_BIND` to the host's Tailscale IP (or `0.0.0.0` with a firewall),
+Install Tailscale on the host and set `HERMITHUB_BIND` to the host's Tailscale IP (or `0.0.0.0` with a firewall),
 or use `tailscale serve 8787`.
 
 ## SSH tunnel

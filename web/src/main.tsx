@@ -93,8 +93,8 @@ function App() {
 
   useEffect(() => {
     const on = () => queryClient.setQueryData(["me"], { authed: false, needsSetup: false });
-    window.addEventListener("hub:unauthorized", on);
-    return () => window.removeEventListener("hub:unauthorized", on);
+    window.addEventListener("hermithub:unauthorized", on);
+    return () => window.removeEventListener("hermithub:unauthorized", on);
   }, []);
 
   if (me.isLoading) return null;

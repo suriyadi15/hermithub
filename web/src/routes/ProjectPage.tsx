@@ -72,7 +72,7 @@ type Side = "files" | "search";
 
 function readMonacoPref() {
   try {
-    return localStorage.getItem("hub:monaco-on-touch") === "1";
+    return localStorage.getItem("hermithub:monaco-on-touch") === "1";
   } catch {
     return false;
   }
@@ -282,7 +282,7 @@ export default function ProjectPage() {
     const next = !monacoOnTouch;
     setMonacoOnTouch(next);
     try {
-      localStorage.setItem("hub:monaco-on-touch", next ? "1" : "0");
+      localStorage.setItem("hermithub:monaco-on-touch", next ? "1" : "0");
     } catch {}
   };
 

@@ -6,7 +6,7 @@
       "name": "hermithub",
     },
     "server": {
-      "name": "@hub/server",
+      "name": "@hermithub/server",
       "dependencies": {
         "elysia": "^1.4.30",
       },
@@ -16,7 +16,7 @@
       },
     },
     "web": {
-      "name": "@hub/web",
+      "name": "@hermithub/web",
       "dependencies": {
         "@elysiajs/eden": "^1.4.9",
         "@monaco-editor/react": "^4.7.0",
@@ -65,9 +65,9 @@
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.12", "", {}, "sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww=="],
 
-    "@hub/server": ["@hub/server@workspace:server"],
+    "@hermithub/server": ["@hermithub/server@workspace:server"],
 
-    "@hub/web": ["@hub/web@workspace:web"],
+    "@hermithub/web": ["@hermithub/web@workspace:web"],
 
     "@jridgewell/gen-mapping": ["@jridgewell/gen-mapping@0.3.13", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.0", "@jridgewell/trace-mapping": "^0.3.24" } }, "sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA=="],
 

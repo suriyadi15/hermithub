@@ -8,8 +8,8 @@ let root: string;
 let outside: string;
 
 beforeAll(() => {
-  root = mkdtempSync(join(tmpdir(), "hub-root-"));
-  outside = mkdtempSync(join(tmpdir(), "hub-out-"));
+  root = mkdtempSync(join(tmpdir(), "hermithub-root-"));
+  outside = mkdtempSync(join(tmpdir(), "hermithub-out-"));
   mkdirSync(join(root, "app/src"), { recursive: true });
   writeFileSync(join(outside, "secret"), "x");
   symlinkSync(outside, join(root, "app/escape"));
@@ -60,6 +60,6 @@ describe("workspaces", () => {
     expect(() => splitWorkspace(id)).toThrow(),
   );
   test("worktrees resolve inside the hidden worktrees folder", () => {
-    expect(projectDir("app@login").endsWith(join(".hub-worktrees", "app", "login"))).toBe(true);
+    expect(projectDir("app@login").endsWith(join(".hermithub-worktrees", "app", "login"))).toBe(true);
   });
 });

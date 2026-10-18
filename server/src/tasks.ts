@@ -14,7 +14,7 @@ export async function runTask(opts: { task: string; label: string; script: strin
   if (same && !same.dead) return { name: same.name };
   if (same) await killSession(same.name);
 
-  const name = `hub-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+  const name = `hermithub-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
   // Keep the pane (remain-on-exit) with a clear result line at the end.
   const script = `${opts.script}
 code=$?

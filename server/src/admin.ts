@@ -78,9 +78,9 @@ export function autoUpdateCommand(arg?: string) {
   if (arg === "on" || arg === "off") setAutoUpdate(arg === "on");
   else if (arg && arg !== "status") usage("Usage: hermithub auto-update on|off|status");
   const a = autoUpdate();
-  console.log(`Automatic updates are ${a.enabled ? "on" : "off"}${a.fromEnv ? " (set by HUB_AUTO_UPDATE)" : ""}.`);
+  console.log(`Automatic updates are ${a.enabled ? "on" : "off"}${a.fromEnv ? " (set by HERMITHUB_AUTO_UPDATE)" : ""}.`);
   if (a.fromEnv && (arg === "on" || arg === "off")) {
-    console.log("HUB_AUTO_UPDATE in the environment overrides this setting; change it in ~/.config/hermithub/env.");
+    console.log("HERMITHUB_AUTO_UPDATE in the environment overrides this setting; change it in ~/.config/hermithub/env.");
   }
   if (arg === "on" || arg === "off") console.log("The running server picks this up at its next check (within 6 hours).");
 }

@@ -64,7 +64,7 @@ export const terminalRoutes = new Elysia().ws("/ws/term/:name", {
   async open(ws) {
     const { name } = ws.data.params;
     pending.set(ws.id, []);
-    if (!/^hub-[a-z0-9]+$/.test(name) || !(await hasSession(name))) {
+    if (!/^hermithub-[a-z0-9]+$/.test(name) || !(await hasSession(name))) {
       pending.delete(ws.id);
       ws.close(4404, "session not found");
       return;

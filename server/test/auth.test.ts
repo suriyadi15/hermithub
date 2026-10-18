@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 // auth.ts opens the database on import: keep it away from the real data folder.
-process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "hub-auth-"));
-process.env.HUB_DB = ":memory:";
-const { clientIp, hashToken, locked, recordFail, resetFails } = await import("../src/auth");
+process.env.DATA_DIR = mkdtempSync(join(tmpdir(), "hermithub-auth-"));
+process.env.HERMITHUB_DB = ":memory:";
+const { clientIp, hashToken, locked, publicOrigin, recordFail, resetFails } = await import("../src/auth");
 
 const server = { requestIP: () => ({ address: "10.0.0.9" }) };
 const req = (headers: Record<string, string>) => new Request("http://hub/api/auth/login", { headers });
@@ -57,4 +57,21 @@ describe("login lockout", () => {
 
 test("session tokens are stored hashed", () => {
   expect(hashToken("abc")).toBe("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+});
+
+describe("publicOrigin", () => {
+  test("prefers the first PUBLIC_ORIGIN", () => {
+    expect(publicOrigin({ PUBLIC_ORIGIN: "https://a.example, https://b.example", RAILWAY_PUBLIC_DOMAIN: "x.up.railway.app" }, 8787)).toBe(
+      "https://a.example",
+    );
+  });
+
+  test("falls back to the domain a host platform assigned", () => {
+    expect(publicOrigin({ RAILWAY_PUBLIC_DOMAIN: "x.up.railway.app" }, 8787)).toBe("https://x.up.railway.app");
+    expect(publicOrigin({ RENDER_EXTERNAL_URL: "https://x.onrender.com/" }, 8787)).toBe("https://x.onrender.com");
+  });
+
+  test("defaults to localhost", () => {
+    expect(publicOrigin({}, 9000)).toBe("http://localhost:9000");
+  });
 });

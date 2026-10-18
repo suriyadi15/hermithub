@@ -33,7 +33,7 @@ The browser talks to a small Bun server, and every agent runs inside a tmux sess
 running when you close the tab. The server runs either as a standalone executable (a user service on your machine)
 or in a Docker container; the diagram shows the Docker setup.
 
-![HermitHub architecture](https://mermaid.ink/img/Zmxvd2NoYXJ0IFRCCiAgICB1c2VyWyJCcm93c2VyIC8gcGhvbmU8YnIvPlJlYWN0IFVJIMK3IHh0ZXJtLmpzIMK3IE1vbmFjbyJdCiAgICBjYWRkeVsiQ2FkZHkgKG9wdGlvbmFsKTxici8-SFRUUFMgZm9yIC0tZG9tYWluIl0KCiAgICBzdWJncmFwaCBjb250YWluZXJbIkRvY2tlciBjb250YWluZXIiXQogICAgICAgIHNlcnZlclsiSGVybWl0SHViIHNlcnZlciDCtyBCdW4gKyBFbHlzaWEgwrcgOjg3ODc8YnIvPnBhc3N3b3JkIGxvZ2luICsgb3JpZ2luIGNoZWNrIl0KICAgICAgICBhcGlbIlJFU1QgL2FwaS8qPGJyLz5wcm9qZWN0cyDCtyBmaWxlcyDCtyBnaXQgwrcgc2VhcmNoPGJyLz5zZXNzaW9ucyDCtyBhZ2VudHMgwrcgc2V0dGluZ3MiXQogICAgICAgIHdzWyJXZWJTb2NrZXQgL3dzL3Rlcm0vOm5hbWU8YnIvPmxpdmUgdGVybWluYWwiXQogICAgICAgIHRtdXhbInRtdXggKHByaXZhdGUgc29ja2V0KTxici8-b25lIHRtdXggc2Vzc2lvbiBwZXIgYWdlbnQgc2Vzc2lvbiJdCiAgICAgICAgYWdlbnRzWyJDbGF1ZGUgQ29kZSDCtyBDb2RleCBDTEk8YnIvPkdlbWluaSBDTEkgwrcgYmFzaCJdCiAgICBlbmQKCiAgICBzdWJncmFwaCBkYXRhWyIuL2RhdGEgb24gdGhlIGhvc3QiXQogICAgICAgIHByb2plY3RzWygicHJvamVjdHMvPGJyLz55b3VyIGNvZGUiKV0KICAgICAgICBob21lWygiaG9tZS88YnIvPmFnZW50cywgbG9naW5zLDxici8-Z2l0ICYgU1NIIGNvbmZpZyIpXQogICAgICAgIGRiWygiZGIvPGJyLz5TUUxpdGUiKV0KICAgIGVuZAoKICAgIGNsb3VkWyJBSSBwcm92aWRlcnMgwrcgR2l0SHViPGJyLz5vdGhlciBnaXQgc2VydmVycyJdCgogICAgdXNlciAtLSAiSFRUUFMiIC0tPiBjYWRkeQogICAgY2FkZHkgLS0-IHNlcnZlcgogICAgdXNlciAtLiAibG9jYWxob3N0IC8gdHVubmVsIiAuLT4gc2VydmVyCiAgICBzZXJ2ZXIgLS0-IGFwaQogICAgc2VydmVyIC0tPiB3cwogICAgYXBpIC0tICJzdGFydCAvIHN0b3AgLyBzdGF0dXMiIC0tPiB0bXV4CiAgICB3cyAtLSAiYXR0YWNoIChQVFkpIiAtLT4gdG11eAogICAgdG11eCAtLT4gYWdlbnRzCiAgICBhcGkgLS0-IGRiCiAgICBhcGkgLS0-IHByb2plY3RzCiAgICBhZ2VudHMgLS0-IHByb2plY3RzCiAgICBhZ2VudHMgLS0-IGhvbWUKICAgIGFnZW50cyAtLT4gY2xvdWQK?type=png&bgColor=!white&width=1600)
+![HermitHub architecture](https://mermaid.ink/img/Zmxvd2NoYXJ0IFRCCiAgICB1c2VyWyJCcm93c2VyIC8gcGhvbmU8YnIvPlJlYWN0IFVJIMK3IHh0ZXJtLmpzIMK3IE1vbmFjbyJdCiAgICBjYWRkeVsiQ2FkZHkgKG9wdGlvbmFsKTxici8-SFRUUFMgZm9yIC0tZG9tYWluIl0KCiAgICBzdWJncmFwaCBjb250YWluZXJbIkRvY2tlciBjb250YWluZXIiXQogICAgICAgIHNlcnZlclsiSGVybWl0SHViIHNlcnZlciDCtyBCdW4gKyBFbHlzaWEgwrcgOjg3ODc8YnIvPnBhc3N3b3JkIGxvZ2luICsgb3JpZ2luIGNoZWNrIl0KICAgICAgICBhcGlbIlJFU1QgL2FwaS8qPGJyLz5wcm9qZWN0cyDCtyBmaWxlcyDCtyBnaXQgwrcgc2VhcmNoPGJyLz5zZXNzaW9ucyDCtyBhZ2VudHMgwrcgc2V0dGluZ3MiXQogICAgICAgIHdzWyJXZWJTb2NrZXQgL3dzL3Rlcm0vOm5hbWU8YnIvPmxpdmUgdGVybWluYWwiXQogICAgICAgIHRtdXhbInRtdXggKHByaXZhdGUgc29ja2V0KTxici8-b25lIHRtdXggc2Vzc2lvbiBwZXIgYWdlbnQgc2Vzc2lvbiJdCiAgICAgICAgYWdlbnRzWyJDbGF1ZGUgQ29kZSDCtyBDb2RleCBDTEk8YnIvPkdlbWluaSBDTEkgwrcgYmFzaCJdCiAgICBlbmQKCiAgICBzdWJncmFwaCBkYXRhWyIuL2RhdGEgb24gdGhlIGhvc3QgPSBob21lIG9mIHRoZSBjb250YWluZXIgdXNlciJdCiAgICAgICAgcHJvamVjdHNbKCJwcm9qZWN0cy88YnIvPnlvdXIgY29kZSIpXQogICAgICAgIGhvbWVbKCJhZ2VudHMsIGxvZ2lucyw8YnIvPmdpdCAmIFNTSCBjb25maWciKV0KICAgICAgICBkYlsoIi5oZXJtaXRodWIvPGJyLz5TUUxpdGUiKV0KICAgIGVuZAoKICAgIGNsb3VkWyJBSSBwcm92aWRlcnMgwrcgR2l0SHViPGJyLz5vdGhlciBnaXQgc2VydmVycyJdCgogICAgdXNlciAtLSAiSFRUUFMiIC0tPiBjYWRkeQogICAgY2FkZHkgLS0-IHNlcnZlcgogICAgdXNlciAtLiAibG9jYWxob3N0IC8gdHVubmVsIiAuLT4gc2VydmVyCiAgICBzZXJ2ZXIgLS0-IGFwaQogICAgc2VydmVyIC0tPiB3cwogICAgYXBpIC0tICJzdGFydCAvIHN0b3AgLyBzdGF0dXMiIC0tPiB0bXV4CiAgICB3cyAtLSAiYXR0YWNoIChQVFkpIiAtLT4gdG11eAogICAgdG11eCAtLT4gYWdlbnRzCiAgICBhcGkgLS0-IGRiCiAgICBhcGkgLS0-IHByb2plY3RzCiAgICBhZ2VudHMgLS0-IHByb2plY3RzCiAgICBhZ2VudHMgLS0-IGhvbWUKICAgIGFnZW50cyAtLT4gY2xvdWQK?type=png&bgColor=!white&width=1600)
 
 What happens when you start a session and come back later:
 
@@ -73,6 +73,11 @@ curl -fsSL https://raw.githubusercontent.com/suriyadi15/hermithub/main/install.s
 
 All options, service management and uninstalling: [docs/installation.md](docs/installation.md).
 
+No server? Deploy the image on a hosting platform, it needs one volume
+([docs/one-click-deploy.md](docs/one-click-deploy.md)):
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/suriyadi15/hermithub)
+
 Or let your AI agent do it: install the [HermitHub skill](docs/ai-install.md) (Claude Code:
 `/plugin install hermithub --marketplace suriyadi15/hermithub`) and ask *"Install HermitHub on this
 machine"*.
@@ -108,13 +113,14 @@ Conversations are kept either way; continue them with **Resume** on the project 
 Standalone: settings in `~/.config/hermithub/env`, database in `~/.hermithub`, projects in `~/projects`.
 Agents and logins are those of your user (`~/.local`, `~/.claude`, `~/.config/gh`…).
 
-Docker: everything is in `./data` next to `docker-compose.yml`:
+Docker: everything is in `./data` next to `docker-compose.yml`, which is the home folder of the container user and
+laid out the same way:
 
 | Folder | Contents |
 |---|---|
 | `data/projects` | Your projects |
-| `data/home` | Home folder of the container user: installed agents, their logins and history, GitHub CLI login, git config, SSH keys |
-| `data/db` | Dashboard database (password, settings, session history) |
+| `data/.hermithub` | Dashboard database (password, settings, session history) |
+| `data` | Installed agents, their logins and history, GitHub CLI login, git config, SSH keys |
 
 Back up `data/` to back up a Docker install. See [docs/configuration.md](docs/configuration.md) to put projects
 somewhere else or share folders with the host.
@@ -122,6 +128,7 @@ somewhere else or share folders with the host.
 ## Documentation
 
 - [Installation](docs/installation.md) — standalone executable or Docker, installer options, uninstall
+- [One-click deploy](docs/one-click-deploy.md) — Render, Railway, Coolify or any container platform
 - [Install with an AI agent](docs/ai-install.md) — skill for Claude Code, Codex and other agents
 - [Configuration](docs/configuration.md) — `.env` options, data folders, resource limits
 - [Agents](docs/agents.md) — installing, logging in, API keys, permission modes

@@ -31,7 +31,7 @@ Worktrees need a git repository with at least one commit.
 
 ## Where they live
 
-Worktrees are kept in `data/projects/.hub-worktrees/<project>/<name>`. That folder is hidden from the
+Worktrees are kept in `data/projects/.hermithub-worktrees/<project>/<name>`. That folder is hidden from the
 project list and never put inside the project, so nothing needs adding to `.gitignore`. In the API, every
 route that takes a project also accepts `<project>@<worktree>`, e.g. `/api/projects/app@feat-login/git`.
 
