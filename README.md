@@ -7,7 +7,7 @@ the tab: sessions keep running on the server.
 
 Agents, their logins, GitHub access and git settings are all set up from the dashboard.
 
-**Website and docs: [projecthubapp.pages.dev](https://projecthubapp.pages.dev)**
+**Website and docs: [hermithub.pages.dev](https://hermithub.pages.dev)**
 
 ## Features
 
