@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1 — 2026-10-18
+
+- **Website and docs** at [hermithub.pages.dev](https://hermithub.pages.dev): a landing page with screenshots and
+  the documentation from `docs/`, with search. It is built from `site/` (Astro Starlight) and deployed to
+  Cloudflare Pages on every push to `main`. See [docs/development.md](docs/development.md#website).
+
 ## 0.6.0 — 2026-10-18
 
 - **Project Hub is now HermitHub.** The repository is `suriyadi15/hermithub`, the command `hermithub`, the image
