@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1 — 2026-10-18
+
+- Support links: Buy Me a Coffee replaced by GitHub Sponsors, and a Trakteer link added, in the README and
+  at the bottom of the website landing page.
+
 ## 0.9.0 — 2026-10-18
 
 - **`hermithub tunnel`**: a public `https://….trycloudflare.com` address for a standalone install, with no
