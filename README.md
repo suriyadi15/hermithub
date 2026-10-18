@@ -9,6 +9,8 @@ Agents, their logins, GitHub access and git settings are all set up from the das
 
 **Website and docs: [hermithub.pages.dev](https://hermithub.pages.dev)**
 
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/suriyadi15)
+
 ## Features
 
 - **Projects**: create (empty folder, `git init` or `git clone`), rename, move to trash, restore. Star favorites to
