@@ -722,11 +722,11 @@ export default function ProjectPage() {
               <div className="flex h-full min-h-0 flex-col">
                 {strip(
                   <>
-                    {sessionTabs}
-                    {fileTabs}
                     <button onClick={() => setActive("git")} className={tabClass(active === "git")}>
                       <GitBranch className="size-3.5" /> Git
                     </button>
+                    {sessionTabs}
+                    {fileTabs}
                   </>,
                 )}
                 {sessionBar}
