@@ -7,6 +7,7 @@ import {
   ExternalLink,
   File,
   FolderGit2,
+  TerminalSquare,
   FolderTree,
   GitBranch,
   History,
@@ -715,6 +716,11 @@ export default function ProjectPage() {
           )
         )}
       </div>
+      <Button asChild size="icon" variant="ghost" className="size-10 md:size-8">
+        <Link to={active.startsWith("s:") ? `/sessions?s=${active.slice(2)}` : "/sessions"} title="All sessions" aria-label="All sessions">
+          <TerminalSquare className="size-5 md:size-4" />
+        </Link>
+      </Button>
       {!isMobile && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, LogOut, Settings as SettingsIcon } from "lucide-react";
+import { LayoutDashboard, LogOut, TerminalSquare, Settings as SettingsIcon } from "lucide-react";
 import { lazy, StrictMode, Suspense, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, NavLink, Route, Routes, useLocation } from "react-router";
@@ -18,6 +18,7 @@ import "./index.css";
 
 // Terminal + editor code is only needed on project pages.
 const ProjectPage = lazy(() => import("@/routes/ProjectPage"));
+const SessionsPage = lazy(() => import("@/routes/SessionsPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,7 +31,7 @@ const queryClient = new QueryClient({
 
 function Shell() {
   const location = useLocation();
-  const inProject = location.pathname.startsWith("/p/");
+  const inProject = location.pathname.startsWith("/p/") || location.pathname === "/sessions";
   const update = useUpdateStatus();
   const nav = (to: string, label: string, Icon: typeof LayoutDashboard, dot = false) => (
     <NavLink
@@ -58,6 +59,7 @@ function Shell() {
           <img src="/favicon.svg" alt="" className="size-7" />
           <span className="mr-2 font-semibold sm:mr-4">HermitHub</span>
           {nav("/", "Dashboard", LayoutDashboard)}
+          {nav("/sessions", "Sessions", TerminalSquare)}
           {nav("/settings", "Settings", SettingsIcon, update.data?.available)}
           <Button
             variant="ghost"
@@ -79,6 +81,7 @@ function Shell() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
           <Route path="/p/:project" element={<ProjectPage />} />
+          <Route path="/sessions" element={<SessionsPage />} />
           <Route path="*" element={<div className="p-8 text-muted-foreground">Page not found.</div>} />
           </Routes>
         </Suspense>
