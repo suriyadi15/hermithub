@@ -238,6 +238,7 @@ native_deps() {
   fi
   { command -v node >/dev/null && command -v npm >/dev/null; } ||
     warn "Node.js 20+ with npm is not installed. Claude Code works without it; Codex, Gemini CLI and other npm-based agents need it."
+  command -v rg >/dev/null || warn "ripgrep (rg) is not installed. Search works without it but is faster with it."
   command -v gh >/dev/null || warn "GitHub CLI (gh) is not installed. Install it to log in to GitHub from the dashboard."
 }
 

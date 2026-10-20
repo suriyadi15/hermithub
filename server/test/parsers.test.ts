@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { parseBranches, parseStatus, parseTags } from "../src/git";
-import { fuzzyScore, parseRgJson } from "../src/search";
+import { fuzzyScore, parseGitGrep, parseRgJson } from "../src/search";
 import { repoName } from "../src/projects";
 import { buildCommand, treeUsage } from "../src/sessions";
 import { findLoginHints, findRemoteUrl, parseScrollFrame, parseSessions, tailLines, wheelSeq } from "../src/tmux";
@@ -147,6 +147,19 @@ describe("search", () => {
     expect(r.files.map((f) => f.path)).toEqual(["a.ts", "b.ts"]);
     expect(r.files[0]!.matches[0]).toEqual({ line: 3, text: "const é = foo;", ranges: [[10, 13]] });
     expect(parseRgJson(out, 2).truncated).toBe(true);
+  });
+});
+
+describe("git grep fallback", () => {
+  test("parseGitGrep groups matches and finds ranges", () => {
+    const out = ["a.ts\x003\x00const é = Foo;", "a.ts\x009\x00foo()", "b.ts\x001\x00foo foo"].join("\n");
+    const r = parseGitGrep(out, "foo");
+    expect(r.total).toBe(3);
+    expect(r.files.map((f) => f.path)).toEqual(["a.ts", "b.ts"]);
+    expect(r.files[0]!.matches[0]).toEqual({ line: 3, text: "const é = Foo;", ranges: [[10, 13]] });
+    expect(r.files[1]!.matches[0]!.ranges).toEqual([[0, 3], [4, 7]]);
+    expect(parseGitGrep(out, "foo", { case: true }).files[0]!.matches[0]!.ranges).toEqual([]);
+    expect(parseGitGrep(out, "foo", {}, 2).truncated).toBe(true);
   });
 });
 

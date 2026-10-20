@@ -10,6 +10,27 @@ function rg(cwd: string, args: string[]) {
   return exec(["rg", "--hidden", "-g", "!.git", "-g", "!node_modules", ...args], { cwd, timeoutMs: 15_000 });
 }
 
+const hasRg = () => Bun.which("rg") !== null;
+const SKIP_DIRS = /(^|\/)(node_modules|\.git)\//;
+
+/** Project files, via ripgrep when installed, else `git ls-files`, else a plain directory walk. */
+async function listFiles(dir: string): Promise<string[]> {
+  if (hasRg()) {
+    const r = await rg(dir, ["--files"]);
+    if (r.code > 1) throw new HttpError(500, r.stderr.trim() || "rg failed");
+    return r.stdout.split("\n").filter(Boolean).map((p) => p.replace(/^\.\//, ""));
+  }
+  const g = await exec(["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"], { cwd: dir, timeoutMs: 15_000 });
+  if (g.code === 0) return g.stdout.split("\0").filter((p) => p && !SKIP_DIRS.test(p));
+  const out: string[] = [];
+  for await (const p of new Bun.Glob("**/*").scan({ cwd: dir, dot: true, onlyFiles: true })) {
+    if (SKIP_DIRS.test(p)) continue;
+    out.push(p);
+    if (out.length >= 50_000) break;
+  }
+  return out;
+}
+
 /**
  * Fuzzy score of `path` for `query` (subsequence match, case-insensitive), or -1 when it does not match.
  * Rewards consecutive characters, matches at word starts and in the file name.
@@ -82,14 +103,64 @@ export function parseRgJson(out: string, limit = MAX_MATCHES) {
   return { files, total, truncated };
 }
 
+export interface GrepOpts {
+  regex?: boolean;
+  case?: boolean;
+  word?: boolean;
+}
+
+/** Turn `git grep -n --null` output (`path\0line\0text`) into the same shape as `parseRgJson`; match ranges are found in JS. */
+export function parseGitGrep(out: string, query: string, opts: GrepOpts = {}, limit = MAX_MATCHES) {
+  const files: { path: string; matches: TextMatch[] }[] = [];
+  let total = 0;
+  let truncated = false;
+  let re: RegExp | null = null;
+  try {
+    const src = opts.regex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    re = new RegExp(opts.word ? `\\b(?:${src})\\b` : src, opts.case ? "g" : "gi");
+  } catch {}
+  for (const line of out.split("\n")) {
+    const z = line.indexOf("\0");
+    if (z < 0) continue;
+    const m = /^(\d+)\0(.*)$/.exec(line.slice(z + 1));
+    if (!m) continue;
+    if (total >= limit) {
+      truncated = true;
+      break;
+    }
+    const path = line.slice(0, z).replace(/^\.\//, "");
+    const text = m[2]!.replace(/\r$/, "");
+    const ranges: [number, number][] = [];
+    if (re) {
+      re.lastIndex = 0;
+      for (let x = re.exec(text); x; x = re.exec(text)) {
+        if (x[0] === "") re.lastIndex++;
+        else ranges.push([x.index, x.index + x[0].length]);
+      }
+    }
+    let f = files[files.length - 1];
+    if (f?.path !== path) files.push((f = { path, matches: [] }));
+    f.matches.push({ line: Number(m[1]), text: text.length > 400 ? text.slice(0, 400) : text, ranges });
+    total++;
+  }
+  return { files, total, truncated };
+}
+
+/** `git grep` equivalent of the rg text search, for hosts without ripgrep. Works outside repos too (`--no-index`). */
+function gitGrep(cwd: string, query: string, opts: GrepOpts, globs: string[]) {
+  const args = ["grep", "--no-index", "--exclude-standard", "-n", "-I", "--null", opts.regex ? "-E" : "-F", opts.case ? "" : "-i"];
+  if (opts.word) args.push("-w");
+  args.push("-e", query, "--", ".", ":(exclude)node_modules", ":(exclude).git");
+  for (const g of globs) args.push(g.startsWith("!") ? `:(exclude,glob)**/${g.slice(1)}` : `:(glob)**/${g}`);
+  return exec(["git", ...args.filter(Boolean)], { cwd, timeoutMs: 15_000 });
+}
+
 export const searchRoutes = new Elysia({ prefix: "/api/search" })
   .get(
     "/files",
     async ({ query }) => {
       const dir = projectDir(query.project);
-      const r = await rg(dir, ["--files"]);
-      if (r.code > 1) throw new HttpError(500, r.stderr.trim() || "rg failed");
-      const all = r.stdout.split("\n").filter(Boolean).map((p) => p.replace(/^\.\//, ""));
+      const all = await listFiles(dir);
       if (!query.q.trim()) return all.sort((a, b) => a.length - b.length).slice(0, MAX_FILES);
       return all
         .map((p) => ({ p, s: fuzzyScore(p, query.q) }))
@@ -104,11 +175,19 @@ export const searchRoutes = new Elysia({ prefix: "/api/search" })
     "/text",
     async ({ query }) => {
       const dir = projectDir(query.project);
+      const globs = (query.glob ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+      if (!hasRg()) {
+        const opts = { regex: query.regex, case: query.case, word: query.word };
+        const g = await gitGrep(dir, query.q, opts, globs);
+        // git grep: 0 = matches, 1 = none, 128/other = error.
+        if (g.code > 1 && !g.stdout) throw new HttpError(400, g.stderr.trim().split("\n").slice(-3).join("\n") || "Search failed");
+        return parseGitGrep(g.stdout, query.q, opts);
+      }
       const args = ["--json", "--max-count", "100", "--max-columns", "1000", "--max-filesize", "2M"];
       if (!query.regex) args.push("--fixed-strings");
       args.push(query.case ? "--case-sensitive" : "--ignore-case");
       if (query.word) args.push("--word-regexp");
-      for (const g of (query.glob ?? "").split(",").map((s) => s.trim()).filter(Boolean)) args.push("-g", g);
+      for (const g of globs) args.push("-g", g);
       args.push("--", query.q, ".");
       const r = await rg(dir, args);
       // rg: 0 = matches, 1 = none, 2 = error (e.g. bad regex).

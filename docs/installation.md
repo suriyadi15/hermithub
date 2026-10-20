@@ -15,6 +15,7 @@ HermitHub can be installed two ways:
   or Homebrew) after asking.
 - Optional: Node.js 20+ with npm for npm-distributed agents (Codex, Gemini CLI, OpenCode, Copilot, Qwen, Crush),
   and GitHub CLI (`gh`) to log in to GitHub from the dashboard. Claude Code needs neither.
+- Optional: `ripgrep` (`rg`) for faster file and text search. Without it, search falls back to `git`.
 - A normal user account. The installer refuses to run as root.
 
 **Docker**
