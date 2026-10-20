@@ -26,10 +26,17 @@ import { NewSessionDialog } from "@/components/NewSessionDialog";
 import { PlainEditor, type Reveal } from "@/components/PlainEditor";
 import { QuickOpen } from "@/components/QuickOpen";
 import { SearchPanel } from "@/components/SearchPanel";
-import { ModeBadge, SessionActions, StatusDot } from "@/components/SessionCard";
+import { ModeBadge, SessionActions, SessionTabMenu, StatusDot } from "@/components/SessionCard";
 import { TerminalView } from "@/components/TerminalView";
 import { WorktreesPanel } from "@/components/WorktreesPanel";
 import { Button } from "@/components/ui/button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +48,7 @@ import {
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useIsMobile, useIsTouch } from "@/hooks/use-mobile";
 import { api, ApiError, unwrap, type SessionMode } from "@/lib/api";
+import { copyText } from "@/lib/clipboard";
 import { ago } from "@/lib/format";
 import { useModes } from "@/lib/modes";
 import { useProjects, useSessions, useStartSession, useWorktrees } from "@/lib/queries";
@@ -180,13 +188,24 @@ export default function ProjectPage() {
     [allFiles, ws],
   );
 
-  const closeFile = (path: string) => {
-    const f = files.find((x) => x.path === path);
-    if (f && f.content !== f.saved && !confirm(`${path} has unsaved changes. Close anyway?`)) return;
-    const rest = files.filter((x) => x.path !== path);
-    setFiles((fs) => fs.filter((x) => !(x.ws === ws && x.path === path)));
-    if (active === fileKey({ ws, path })) setActive(rest[0] ? fileKey(rest[0]) : "f:");
+  /** Close several tabs at once with a single unsaved-changes prompt. `focus` is activated if the active tab closes. */
+  const closeFiles = (paths: string[], focus?: string) => {
+    if (!paths.length) return;
+    const gone = new Set(paths);
+    const dirty = files.filter((f) => gone.has(f.path) && f.content !== f.saved);
+    if (dirty.length) {
+      const msg = dirty.length === 1 ? `${dirty[0].path} has unsaved changes.` : `${dirty.length} files have unsaved changes.`;
+      if (!confirm(`${msg} Close anyway?`)) return;
+    }
+    const rest = files.filter((f) => !gone.has(f.path));
+    setFiles((fs) => fs.filter((x) => !(x.ws === ws && gone.has(x.path))));
+    const activeIdx = files.findIndex((f) => fileKey(f) === active);
+    if (activeIdx >= 0 && gone.has(files[activeIdx].path)) {
+      const next = rest.find((f) => f.path === focus) ?? rest.find((f) => files.indexOf(f) > activeIdx) ?? rest[rest.length - 1];
+      setActive(next ? fileKey(next) : "f:");
+    }
   };
+  const closeFile = (path: string) => closeFiles([path]);
 
   /** Saves always go to the workspace the file was opened from. */
   const saveFile = async (path: string, force = false, fws = ws) => {
@@ -343,7 +362,8 @@ export default function ProjectPage() {
   const sessionTabs = list.map((s) => {
     const Icon = modeInfo(s.mode).icon;
     return (
-      <button key={s.name} onClick={() => setActive(`s:${s.name}`)} className={tabClass(active === `s:${s.name}`)}>
+      <SessionTabMenu key={s.name} session={s}>
+      <button onClick={() => setActive(`s:${s.name}`)} className={tabClass(active === `s:${s.name}`)}>
         <StatusDot status={s.status} />
         <Icon className="size-3.5" />
         <span className="max-w-36 truncate">{s.label}</span>
@@ -354,25 +374,68 @@ export default function ProjectPage() {
           </span>
         )}
       </button>
+      </SessionTabMenu>
     );
   });
 
-  const fileTabs = files.map((f) => (
-    <div key={fileKey(f)} className={cn(tabClass(active === fileKey(f)), "group gap-1 pr-1")}>
-      <button className="flex h-full items-center gap-1.5" onClick={() => setActive(fileKey(f))} title={f.path}>
-        <File className="size-3.5" />
-        <span className="max-w-36 truncate">{f.path.split("/").pop()}</span>
-        {f.content !== f.saved && <span className="size-2 rounded-full bg-primary" />}
-      </button>
-      <button
-        className="rounded p-1 opacity-60 hover:bg-accent hover:opacity-100"
-        onClick={() => closeFile(f.path)}
-        aria-label={`Close ${f.path}`}
-      >
-        <X className="size-3.5" />
-      </button>
-    </div>
-  ));
+  const fileTabs = files.map((f, i) => {
+    const dirty = f.content !== f.saved;
+    const paths = files.map((x) => x.path);
+    return (
+      <ContextMenu key={fileKey(f)}>
+        <ContextMenuTrigger asChild>
+          <div
+            className={cn(tabClass(active === fileKey(f)), "group gap-1 pr-1")}
+            onAuxClick={(e) => {
+              if (e.button !== 1) return;
+              e.preventDefault();
+              closeFile(f.path);
+            }}
+          >
+            <button className="flex h-full items-center gap-1.5" onClick={() => setActive(fileKey(f))} title={f.path}>
+              <File className="size-3.5" />
+              <span className="max-w-36 truncate">{f.path.split("/").pop()}</span>
+              {dirty && <span className="size-2 rounded-full bg-primary" />}
+            </button>
+            <button
+              className="rounded p-1 opacity-60 hover:bg-accent hover:opacity-100"
+              onClick={() => closeFile(f.path)}
+              aria-label={`Close ${f.path}`}
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onClick={() => closeFile(f.path)}>Close</ContextMenuItem>
+          <ContextMenuItem disabled={files.length < 2} onClick={() => closeFiles(paths.filter((p) => p !== f.path), f.path)}>
+            Close Others
+          </ContextMenuItem>
+          <ContextMenuItem disabled={i === files.length - 1} onClick={() => closeFiles(paths.slice(i + 1), f.path)}>
+            Close to the Right
+          </ContextMenuItem>
+          <ContextMenuItem
+            disabled={files.every((x) => x.content !== x.saved)}
+            onClick={() => closeFiles(files.filter((x) => x.content === x.saved).map((x) => x.path), f.path)}
+          >
+            Close Saved
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => closeFiles(paths)}>Close All</ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            onClick={async () => (await copyText(f.path)) ? toast.success("Path copied") : toast.error("Could not copy to the clipboard")}
+          >
+            Copy Path
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem disabled={!dirty || f.state !== "ready"} onClick={() => saveFile(f.path, false, f.ws)}>
+            Save
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => reloadFile(f.path)}>Reload</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    );
+  });
 
   const addSessionTab = (
     <DropdownMenu>

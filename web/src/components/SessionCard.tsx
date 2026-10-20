@@ -1,9 +1,10 @@
 import { ExternalLink, MoreVertical, Pencil, RotateCw, Square, SquareArrowOutUpRight } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,7 +48,10 @@ export function ModeBadge({ mode }: { mode: Session["mode"] }) {
   );
 }
 
-export function SessionActions({ session, onOpen }: { session: Session; onOpen?: () => void }) {
+type MenuItem = typeof DropdownMenuItem | typeof ContextMenuItem;
+
+/** Shared by the ⋮ dropdown and the tab's right-click menu: the items plus the dialogs they open. */
+function useSessionMenu(session: Session) {
   const kill = useKillSession();
   const restart = useRestartSession();
   const rename = useRenameSession();
@@ -55,46 +59,43 @@ export function SessionActions({ session, onOpen }: { session: Session; onOpen?:
   const [removeWorktree, setRemoveWorktree] = useState(false);
   const [deleteBranch, setDeleteBranch] = useState(false);
   const [renaming, setRenaming] = useState(false);
-  return (
+
+  const items = (Item: MenuItem, Separator: typeof DropdownMenuSeparator | typeof ContextMenuSeparator, onOpen?: () => void) => (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button size="icon" variant="ghost" className="size-9 shrink-0 sm:size-8">
-            <MoreVertical className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {onOpen && (
-            <DropdownMenuItem onClick={onOpen}>
-              <SquareArrowOutUpRight /> Open terminal
-            </DropdownMenuItem>
-          )}
-          {session.remoteUrl && (
-            <DropdownMenuItem asChild>
-              <a href={session.remoteUrl} target="_blank" rel="noreferrer">
-                <ExternalLink /> Open in claude.ai
-              </a>
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem onClick={() => setRenaming(true)}>
-            <Pencil /> Rename
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => restart.mutate(session.name)}>
-            <RotateCw /> {session.mode === "bash" ? "Restart" : "Restart (continue conversation)"}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            onClick={() => {
-              setRemoveWorktree(false);
-              setDeleteBranch(false);
-              setConfirmKill(true);
-            }}
-          >
-            <Square /> Stop session
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {onOpen && (
+        <Item onClick={onOpen}>
+          <SquareArrowOutUpRight /> Open terminal
+        </Item>
+      )}
+      {session.remoteUrl && (
+        <Item asChild>
+          <a href={session.remoteUrl} target="_blank" rel="noreferrer">
+            <ExternalLink /> Open in claude.ai
+          </a>
+        </Item>
+      )}
+      <Item onClick={() => setRenaming(true)}>
+        <Pencil /> Rename
+      </Item>
+      <Item onClick={() => restart.mutate(session.name)}>
+        <RotateCw /> {session.mode === "bash" ? "Restart" : "Restart (continue conversation)"}
+      </Item>
+      <Separator />
+      <Item
+        variant="destructive"
+        onClick={() => {
+          setRemoveWorktree(false);
+          setDeleteBranch(false);
+          setConfirmKill(true);
+        }}
+      >
+        <Square /> Stop session
+      </Item>
+    </>
+  );
+
+  const dialogs = (
+    <>
       <ConfirmDialog
         open={confirmKill}
         onOpenChange={setConfirmKill}
@@ -132,6 +133,39 @@ export function SessionActions({ session, onOpen }: { session: Session; onOpen?:
         initial={session.label}
         onSubmit={(label) => rename.mutate({ name: session.name, label }, { onSuccess: () => setRenaming(false) })}
       />
+    </>
+  );
+
+  return { items, dialogs };
+}
+
+export function SessionActions({ session, onOpen }: { session: Session; onOpen?: () => void }) {
+  const menu = useSessionMenu(session);
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="icon" variant="ghost" className="size-9 shrink-0 sm:size-8">
+            <MoreVertical className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">{menu.items(DropdownMenuItem, DropdownMenuSeparator, onOpen)}</DropdownMenuContent>
+      </DropdownMenu>
+      {menu.dialogs}
+    </>
+  );
+}
+
+/** Right-click (long-press on touch) menu for a session's tab. */
+export function SessionTabMenu({ session, children }: { session: Session; children: ReactNode }) {
+  const menu = useSessionMenu(session);
+  return (
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+        <ContextMenuContent>{menu.items(ContextMenuItem, ContextMenuSeparator)}</ContextMenuContent>
+      </ContextMenu>
+      {menu.dialogs}
     </>
   );
 }
