@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.0 — 2026-10-20
+
+- **All sessions view** (`/sessions`): every session of every project as a tab, so you can work across
+  projects without leaving the page. Open it from the Dashboard header or the terminal icon in a project.
+- Right-click (long-press on touch) menu on session and file tabs.
+- The Git tab moved to the left on desktop.
+- Search falls back to `git grep` when ripgrep is not installed.
+
 ## 0.9.1 — 2026-10-18
 
 - Support links: Buy Me a Coffee replaced by GitHub Sponsors, and a Trakteer link added, in the README and
