@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "hermithub",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Install, update, configure and troubleshoot HermitHub, the self-hosted dashboard for AI coding agents",
   "author": {
     "name": "Suriyadi"

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.1 — 2026-10-24
+
+- Fix the permission mode select (Settings → Agents and New session) overflowing the screen on mobile: long
+  option labels now truncate in the field and wrap in the dropdown.
+
 ## 0.10.0 — 2026-10-20
 
 - **All sessions view** (`/sessions`): every session of every project as a tab, so you can work across
