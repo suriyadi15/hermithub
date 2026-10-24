@@ -126,7 +126,7 @@ export function NewSessionDialog(props: {
 
         {agent && (
           <div className="grid gap-4">
-            <div className="grid gap-2">
+            <div className="grid min-w-0 gap-2">
               <Label>Permission mode</Label>
               <Select value={permission} onValueChange={setPermission}>
                 <SelectTrigger className="w-full">

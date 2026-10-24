@@ -103,7 +103,7 @@ function AgentCard({ agent, onTask }: { agent: Agent; onTask: OpenTask }) {
 
       {agent.installed && (
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="grid content-start gap-1.5">
+          <div className="grid min-w-0 content-start gap-1.5">
             <Label>Default permission mode</Label>
             <Select value={agent.defaultPermission} onValueChange={(v) => save.mutate({ defaultPermission: v })}>
               <SelectTrigger className="w-full">
@@ -120,7 +120,7 @@ function AgentCard({ agent, onTask }: { agent: Agent; onTask: OpenTask }) {
           </div>
           {agent.apiKey && (
             <form
-              className="grid content-start gap-1.5"
+              className="grid min-w-0 content-start gap-1.5"
               onSubmit={(e) => {
                 e.preventDefault();
                 save.mutate({ apiKey: key });
@@ -131,6 +131,7 @@ function AgentCard({ agent, onTask }: { agent: Agent; onTask: OpenTask }) {
               </Label>
               <div className="flex gap-2">
                 <Input
+                  className="min-w-0"
                   id={`key-${agent.id}`}
                   type="password"
                   autoComplete="off"
